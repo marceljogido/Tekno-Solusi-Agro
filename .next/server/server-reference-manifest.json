@@ -1,5 +1,28 @@
 {
-  "node": {},
+  "node": {
+    "60c3d560155ab93bc9a353442316620811c86fab19": {
+      "workers": {
+        "app/(auth)/login/page": {
+          "moduleId": "[project]/.next-internal/server/app/(auth)/login/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/(auth)/login/actions.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true
+        }
+      },
+      "layer": {
+        "app/(auth)/login/page": "action-browser"
+      }
+    },
+    "60010741a8ae47ffefc46a53c9300f1abf090c672e": {
+      "workers": {
+        "app/(auth)/register/page": {
+          "moduleId": "[project]/.next-internal/server/app/(auth)/register/page/actions.js { ACTIONS_MODULE0 => \"[project]/app/(auth)/register/actions.js [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true
+        }
+      },
+      "layer": {
+        "app/(auth)/register/page": "action-browser"
+      }
+    }
+  },
   "edge": {},
-  "encryptionKey": "vgIFEJOzXtSVgSS9A3XfNzPpWBaucNAkDBQmGY/Lho0="
+  "encryptionKey": "Mo8re/xoELDUb13qyGARAL+eSaUuZcNyMkntPgmAwwg="
 }

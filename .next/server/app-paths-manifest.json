@@ -1,11 +1,15 @@
 {
-  "/page": "app/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/monitoring/page": "app/monitoring/page.js",
-  "/crop-production/page": "app/crop-production/page.js",
-  "/resources/page": "app/resources/page.js",
-  "/insights/page": "app/insights/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/insights/field-activity/page": "app/insights/field-activity/page.js",
-  "/insights/reporting/page": "app/insights/reporting/page.js"
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(auth)/register/page": "app/(auth)/register/page.js",
+  "/(main)/crop/media/new/step-1/page": "app/(main)/crop/media/new/step-1/page.js",
+  "/(main)/crop/media/new/step-2/page": "app/(main)/crop/media/new/step-2/page.js",
+  "/(main)/crop/media/page": "app/(main)/crop/media/page.js",
+  "/(main)/crop/planning/page": "app/(main)/crop/planning/page.js",
+  "/(main)/dashboard/page": "app/(main)/dashboard/page.js",
+  "/(main)/task/page": "app/(main)/task/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/logout/route": "app/api/logout/route.js",
+  "/api/me/route": "app/api/me/route.js",
+  "/api/weather/route": "app/api/weather/route.js",
+  "/page": "app/page.js"
 }
