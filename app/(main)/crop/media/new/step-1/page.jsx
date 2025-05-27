@@ -238,7 +238,7 @@ export default function Step1Page() {
             </Link>
             <button
               type="submit"
-              className="rounded-md bg-green-600 px-6 py-2 text-sm  font-semibold text-white hover:bg-green-700"
+              className="rounded-md bg-green-600 px-6 py-2 text-sm font-semibold text-white hover:bg-green-700"
             >
               Lanjut
             </button>

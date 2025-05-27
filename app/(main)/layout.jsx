@@ -14,7 +14,7 @@ export default function MainLayout({ children }) {
 
       {/* Desktop Sidebar */}
       <div className="flex min-h-screen w-full">
-        <div className="hidden md:flex">
+        <div className="fixed hidden md:flex">
           <Sidebar>
             <SidebarHeader />
             <SidebarContent>
@@ -24,10 +24,14 @@ export default function MainLayout({ children }) {
           </Sidebar>
         </div>
 
+      {/* biar scrollbarnya keliatan */}
+        <div className="hidden md:flex">
+          <Sidebar>
+          </Sidebar>
+        </div>
+
         {/* Main Content */}
-        <main className="h-screen flex-1 overflow-y-auto bg-slate-50">
-          {children}
-        </main>
+        <main className="h-screen flex-1 bg-slate-50">{children}</main>
       </div>
     </SidebarProvider>
   );

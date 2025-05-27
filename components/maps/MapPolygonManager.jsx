@@ -10,7 +10,6 @@ import {
 import {
   IconArrowBarDown,
   IconArrowBarUp,
-  IconArrowUp,
   IconTrash,
 } from "@tabler/icons-react";
 
@@ -345,8 +344,8 @@ export default function MapPolygonManager() {
               }
             >
               <div className="w-60 space-y-4 text-sm">
-                <div className="space-y-2 rounded border bg-slate-100 p-2 overflow-hidden">
-                  <p className="font-sans font-bold text-slate-700 truncate">
+                <div className="space-y-2 overflow-hidden rounded border bg-slate-100 p-2">
+                  <p className="truncate font-sans font-bold text-slate-700">
                     {popupState.name}
                   </p>
                   <p className="font-mono text-xs text-slate-600">
@@ -371,7 +370,7 @@ export default function MapPolygonManager() {
                   <label className="block font-sans text-xs font-semibold text-slate-500">
                     Warna Area
                   </label>
-                  <div className="flex gap-2 mt-1">
+                  <div className="mt-1 flex gap-2">
                     {colorOptions.map((color) => (
                       <button
                         key={color}

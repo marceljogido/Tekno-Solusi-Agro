@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import MapPolygonManager from "@/components/maps/MapPolygonManager";
 import { useRouter } from "next/navigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { IconInfoCircle } from "@tabler/icons-react";
+import MapPolygonManager from "@/components/maps/MapPolygonManager";
 
 export default function Step2Page() {
   const [polygon, setPolygon] = useState(null);
@@ -15,11 +15,6 @@ export default function Step2Page() {
     localStorage.setItem("media-step2", JSON.stringify(polygon));
     router.push("/media/new/step-3");
   };
-
-  // const handleDone = (data) => {
-  //   localStorage.setItem("media-step2", JSON.stringify(data));
-  //   router.push("/media/new/step-3");
-  // };
 
   return (
     <div>

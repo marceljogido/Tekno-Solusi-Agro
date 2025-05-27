@@ -65,13 +65,15 @@ export default function WeatherCard() {
       </div>
 
       {/* column 2 */}
-      <div className="flex flex-col items-end justify-center gap-2 md:items-center md:justify-center">
+      <div className="w-fill flex flex-col items-end justify-center gap-2 md:items-center md:justify-center">
         <img
           src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`}
           alt={weather.description}
-          className="h-16 w-16 md:-m-4 md:h-30 md:w-30"
+          className="ax-h-16 w-auto object-contain sm:max-h-20 md:max-h-24 lg:max-h-28"
         />
-        <div className="w-fill text-sm text-center">Sepertinya {weather.description}</div>
+        <div className="w-fill text-center text-sm">
+          Sepertinya {weather.description}
+        </div>
       </div>
     </div>
   );
