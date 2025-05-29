@@ -1,0 +1,250 @@
+{
+  "id": "b4dba883-6b17-468b-9816-eb6a57f292aa",
+  "prevId": "5c5ca04c-7342-4e0f-8610-cb6b3fffdd14",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.media": {
+      "name": "media",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "internal_id": {
+          "name": "internal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "jumlah_bedengan": {
+          "name": "jumlah_bedengan",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "panjang_bedengan": {
+          "name": "panjang_bedengan",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lebar_bedengan": {
+          "name": "lebar_bedengan",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "jarak_kelompok_legowo": {
+          "name": "jarak_kelompok_legowo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "jarak_dalam_legowo": {
+          "name": "jarak_dalam_legowo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "jarak_baris_legowo": {
+          "name": "jarak_baris_legowo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "panjang_lahan": {
+          "name": "panjang_lahan",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lebar_lahan": {
+          "name": "lebar_lahan",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "luas_lahan": {
+          "name": "luas_lahan",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nilai_tanah": {
+          "name": "nilai_tanah",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paparan": {
+          "name": "paparan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deskripsi": {
+          "name": "deskripsi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.media_polygon": {
+      "name": "media_polygon",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "media_id": {
+          "name": "media_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "area": {
+          "name": "area",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "center": {
+          "name": "center",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "media_polygon_media_id_media_id_fk": {
+          "name": "media_polygon_media_id_media_id_fk",
+          "tableFrom": "media_polygon",
+          "tableTo": "media",
+          "columnsFrom": [
+            "media_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(150)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

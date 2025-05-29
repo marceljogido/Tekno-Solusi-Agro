@@ -8,6 +8,7 @@ import { AppPieChart } from "@/components/dashboard/AppPieChart";
 import { AppBarChart } from "@/components/dashboard/AppBarChart";
 import { IconCoin, IconMap } from "@tabler/icons-react";
 
+
 export default function DashboardPage() {
   const [user, setUser] = useState({ firstName: "", lastName: "" });
   const [greeting, setGreeting] = useState("");
@@ -26,6 +27,7 @@ export default function DashboardPage() {
 
     updateGreeting();
     const interval = setInterval(updateGreeting, 3600000); 
+    
 
     return () => clearInterval(interval); 
   }, []);
@@ -43,6 +45,7 @@ export default function DashboardPage() {
 
     fetchUser();
   }, []);
+
 
   return (
     <div className="space-y-4 overflow-y-auto">

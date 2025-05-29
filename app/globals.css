@@ -139,5 +139,9 @@ body {
   .label {
     @apply block text-sm font-semibold text-slate-500
   }
+  .value-detail {
+    @apply font-mono font-semibold text-slate-600;
+  }
+
   
 }

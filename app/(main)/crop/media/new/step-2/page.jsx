@@ -4,16 +4,22 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { IconInfoCircle } from "@tabler/icons-react";
-import MapPolygonManager from "@/components/maps/MapPolygonManager";
+import MapMediaManager from "@/components/maps/MapMediaManger";
+import Link from "next/link";
+import MapWrapper from "@/components/maps/MapWrapper";
+import MapDraw from "@/components/maps/MapDraw";
 
 export default function Step2Page() {
-  const [polygon, setPolygon] = useState(null);
   const router = useRouter();
+  const [hasPolygon, setHasPolygon] = useState(false);
+  const [polygonData, setPolygonData] = useState(null);
 
-  const handleNext = () => {
-    if (!polygon) return alert("Silakan gambar area terlebih dahulu");
-    localStorage.setItem("media-step2", JSON.stringify(polygon));
-    router.push("/media/new/step-3");
+  const handleContinue = () => {
+    if (!polygonData) return;
+
+    const { instance, ...safePolygonData } = polygonData;
+    localStorage.setItem("media-polygon", JSON.stringify(safePolygonData));
+    router.push("/crop/media/new/step-3");
   };
 
   return (
@@ -22,7 +28,7 @@ export default function Step2Page() {
 
       <div className="px-4 pt-18 pb-4 md:pt-14">
         <h1 className="my-4 text-xl font-bold text-slate-700">
-          Tambah media - Step 2
+          Tambah Media - Step 2
         </h1>
 
         <div className="flex flex-col gap-4 rounded-md border border-slate-200 bg-white p-4">
@@ -37,15 +43,32 @@ export default function Step2Page() {
             </p>
           </div>
 
-          <MapPolygonManager />
+          <MapWrapper>
+            <MapDraw
+              onPolygonComplete={(data) => {
+                setPolygonData(data);
+                setHasPolygon(true);
+              }}
+            />
+          </MapWrapper>
 
-          <div className="mt-6 flex justify-end">
-            <button
-              onClick={handleNext}
-              disabled={!polygon}
-              className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:bg-slate-400"
+          <div className="flex justify-end gap-2">
+            <Link
+              href="/crop/media/new/step-1"
+              className="rounded-md border border-slate-300 bg-slate-100 px-6 py-2 text-sm font-semibold text-gray-500 hover:bg-slate-200"
             >
-              Lanjut ke Step 3
+              Kembali
+            </Link>
+            <button
+              onClick={handleContinue}
+              disabled={!hasPolygon}
+              className={`rounded-md px-6 py-2 text-sm font-semibold text-white ${
+                hasPolygon
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "cursor-not-allowed bg-slate-400"
+              }`}
+            >
+              Lanjut
             </button>
           </div>
         </div>

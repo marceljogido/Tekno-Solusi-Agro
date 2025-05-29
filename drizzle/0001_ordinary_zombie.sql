@@ -1,0 +1,1 @@
+ALTER TABLE "media" ALTER COLUMN "nilai_tanah" SET DATA TYPE bigint;
