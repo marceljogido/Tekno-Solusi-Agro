@@ -294,6 +294,21 @@ export default function MyCrop() {
     <div className="space-y-4 overflow-y-auto">
       <PageHeader title="My Crop" />
 
+      {/* Breadcrumb */}
+      <nav className="text-sm mb-4" aria-label="Breadcrumb">
+        <ol className="list-none p-0 inline-flex space-x-2">
+          <li className="flex items-center">
+            <span className="text-gray-500 hover:text-gray-700">Crop Production</span>
+          </li>
+          <li>
+            <span className="text-gray-400">/</span>
+          </li>
+          <li className="flex items-center">
+            <span className="text-gray-700 font-medium">My Crops</span>
+          </li>
+        </ol>
+      </nav>
+
       <div className="container mx-auto p-4 md:p-8 pt-24 md:pt-20">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <h1 className="text-2xl font-bold">My Crop</h1>

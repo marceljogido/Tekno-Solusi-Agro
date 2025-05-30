@@ -4,14 +4,14 @@ import { useState } from "react";
 import Image from "next/image";
 import { IconEye, IconEyeOff } from "@tabler/icons-react";
 import Link from "next/link";
-import { useActionState } from "react";
-import { register } from "@/app/(auth)/register/actions"; // Adjust the import path as necessary
+import { useFormState } from "react-dom";
+import { register } from "@/app/auth/register/actions";
 
 const initialState = { error: {} };
 
 const FormRegister = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [state, formAction] = useActionState(register, initialState);
+  const [state, formAction] = useFormState(register, initialState);
 
   return (
     <form action={formAction} className="p-6 md:p-8">

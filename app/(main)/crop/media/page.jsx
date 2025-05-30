@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronLeft, MoreVertical, Plus, Map as MapIcon, List as ListIcon } from "lucide-react";
 import PageHeader from '@/components/layout/PageHeader';
+import { motion, AnimatePresence } from "framer-motion";
 
 const GOOGLE_MAPS_LIBRARIES = ["drawing", "geometry"];
 
@@ -103,7 +104,7 @@ function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, map
         </div>
       </div>
 
-      <div className="bg-white shadow-lg rounded-lg p-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="bg-white shadow-lg rounded-lg p-6">
          {/* Search and Filter - Simplified for now */}
          <div className="flex flex-col md:flex-row gap-4 mb-6">
             <Input
@@ -229,7 +230,7 @@ function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, map
             </table>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -1419,7 +1420,20 @@ export default function MediaManagement() {
   return (
     <div className="space-y-4 overflow-y-auto">
       <PageHeader title="Manajemen Media" />
-      
+      {/* Breadcrumb */}
+      <nav className="text-sm mb-4" aria-label="Breadcrumb">
+        <ol className="list-none p-0 inline-flex space-x-2">
+          <li className="flex items-center">
+            <span className="text-gray-500 hover:text-gray-700">Crop Production</span>
+          </li>
+          <li>
+            <span className="text-gray-400">/</span>
+          </li>
+          <li className="flex items-center">
+            <span className="text-gray-700 font-medium">Media Management</span>
+          </li>
+        </ol>
+      </nav>
       <div className="container mx-auto p-4 md:p-8 pt-24 md:pt-20">
         <TabelMedia
           onAdd={() => setShowForm(true)}

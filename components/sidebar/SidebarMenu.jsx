@@ -61,7 +61,7 @@ export default function SidebarMenu() {
             icon={IconChartLine}
             variant="sub"
             label="Crop Tracking"
-            href="/crop/tracking"
+            href="/crop/crop-tracking"
             onClick={closeMobile}
           />
           <SidebarItem
