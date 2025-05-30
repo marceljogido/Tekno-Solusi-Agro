@@ -217,19 +217,48 @@ export default function MyCrop() {
       });
       
       if (!res.ok) {
-        const data = await res.json();
+        // Log the error response details
+        console.error('Delete failed:', res.status, res.statusText);
+
+        let errorText = 'Gagal menghapus tanaman';
+        try {
+          // Try reading as JSON first if Content-Type is application/json
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.indexOf("application/json") !== -1) {
+             const errorData = await res.json();
+             console.error("Error response body (JSON):", errorData);
+             errorText = errorData.error || errorText;
+          } else {
+             // Otherwise, read as text
+             const rawErrorText = await res.text();
+             console.error("Error response body (text):", rawErrorText);
+             errorText = rawErrorText || errorText;
+          }
+        } catch (e) {
+           console.error("Error reading error response body:", e);
+           // Fallback to generic error message if reading fails
+           errorText = `Gagal menghapus tanaman: ${res.status} ${res.statusText || 'Error'}`;
+        }
+
         if (res.status === 401) {
           router.push('/auth/login');
           return;
         }
-        throw new Error(data.error || 'Gagal menghapus tanaman');
+        throw new Error(errorText);
       }
       
-      const data = await res.json();
-      console.log("Delete response:", data);
-      await fetchCrops();
+      // If response is OK, only try to read JSON if there is content and it's JSON
+      const contentType = res.headers.get("content-type");
+      if (res.status !== 204 && contentType && contentType.indexOf("application/json") !== -1) {
+        const data = await res.json();
+        console.log("Delete response:", data);
+      } else {
+        console.log("Delete successful or no content returned.");
+      }
+
+      await fetchCrops(); // Refresh the list after successful deletion
     } catch (err) {
-      console.error('Error deleting crop:', err);
+      console.error('Error deleting crop (client-side):', err);
       setError(err.message);
       alert(err.message);
     } finally {
@@ -352,24 +381,18 @@ export default function MyCrop() {
                             {crop.lightProfile || '-'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
+                            <button
                               onClick={() => handleOpenEditForm(crop)}
-                              className="text-indigo-600 hover:text-indigo-900 mr-3"
+                              className="text-blue-600 hover:text-blue-900 mr-4"
                             >
-                              <FaEdit className="inline-block mr-1" />
                               Edit
-                            </motion.button>
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
+                            </button>
+                            <button
                               onClick={() => handleDeleteCrop(crop.id)}
                               className="text-red-600 hover:text-red-900"
                             >
-                              <FaTrash className="inline-block mr-1" />
                               Hapus
-                            </motion.button>
+                            </button>
                           </td>
                         </motion.tr>
                       ))

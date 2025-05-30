@@ -84,7 +84,9 @@ export default function CropPlanningDetailPage({ params }) {
 
   const formatArea = (area) => {
     if (!area) return '-';
-    return `${formatNumber(area)} m²`;
+    // Convert to number and remove trailing zeros
+    const formattedNumber = Number(area).toString();
+    return `${formattedNumber} m²`;
   };
 
   if (loading) {

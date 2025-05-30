@@ -95,20 +95,20 @@ export default function NewCropForm({ onClose, onSave, initialData }) {
         botanicalName: initialData.botanicalName || initialData.botanical_name || '',
         isPerennial: initialData.isPerennial === true,
         autoCreateTasks: initialData.autoCreateTasks === true,
-        daysToEmerge: initialData.daysToEmerge?.toString() || '0',
-        plantSpacing: initialData.plantSpacing?.toString() || '0',
-        rowSpacing: initialData.rowSpacing?.toString() || '0',
-        plantingDepth: initialData.plantingDepth?.toString() || '0',
-        averageHeight: initialData.averageHeight?.toString() || '0',
-        germinationRate: initialData.germinationRate?.toString() || '100',
-        seedPerCell: initialData.seedPerCell?.toString() || '1',
-        daysToFlower: initialData.daysToFlower?.toString() || '0',
-        daysToMaturity: initialData.daysToMaturity?.toString() || '0',
-        harvestWindow: initialData.harvestWindow?.toString() || '0',
-        lossRate: initialData.lossRate?.toString() || '0',
-        estimatedRevenue: initialData.estimatedRevenue?.toString() || '0',
-        expectedYieldPer3048m: initialData.expectedYieldPer3048m?.toString() || '0',
-        expectedYieldPerHectare: initialData.expectedYieldPerHectare?.toString() || '0'
+        daysToEmerge: Math.round(Number(initialData.daysToEmerge || 0)).toString(),
+        plantSpacing: Math.round(Number(initialData.plantSpacing || 0)).toString(),
+        rowSpacing: Math.round(Number(initialData.rowSpacing || 0)).toString(),
+        plantingDepth: Math.round(Number(initialData.plantingDepth || 0)).toString(),
+        averageHeight: Math.round(Number(initialData.averageHeight || 0)).toString(),
+        germinationRate: Math.round(Number(initialData.germinationRate || 100)).toString(),
+        seedPerCell: Math.round(Number(initialData.seedPerCell || 1)).toString(),
+        daysToFlower: Math.round(Number(initialData.daysToFlower || 0)).toString(),
+        daysToMaturity: Math.round(Number(initialData.daysToMaturity || 0)).toString(),
+        harvestWindow: Math.round(Number(initialData.harvestWindow || 0)).toString(),
+        lossRate: Math.round(Number(initialData.lossRate || 0)).toString(),
+        estimatedRevenue: Math.round(Number(initialData.estimatedRevenue || 0)).toString(),
+        expectedYieldPer3048m: Math.round(Number(initialData.expectedYieldPer3048m || 0)).toString(),
+        expectedYieldPerHectare: Math.round(Number(initialData.expectedYieldPerHectare || 0)).toString()
       };
       console.log("Processed form data:", processedData);
       setFormData(processedData);
@@ -185,35 +185,35 @@ export default function NewCropForm({ onClose, onSave, initialData }) {
               <div>
                 <label htmlFor="daysToEmerge" className="block text-sm font-medium text-gray-600 mb-1">Hari Muncul</label>
                 <div className="relative">
-                  <input value={formData.daysToEmerge} onChange={handleChange} type="number" id="daysToEmerge" name="daysToEmerge" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
+                  <input value={formData.daysToEmerge} onChange={handleChange} type="number" id="daysToEmerge" name="daysToEmerge" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" step="1" />
                   <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 text-sm">hari</span>
                 </div>
               </div>
               <div>
                 <label htmlFor="plantSpacing" className="block text-sm font-medium text-gray-600 mb-1">Jarak Tanam</label>
                 <div className="relative">
-                  <input value={formData.plantSpacing} onChange={handleChange} type="number" id="plantSpacing" name="plantSpacing" step="any" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
+                  <input value={formData.plantSpacing} onChange={handleChange} type="number" id="plantSpacing" name="plantSpacing" step="1" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
                   <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 text-sm">cm</span>
                 </div>
               </div>
               <div>
                 <label htmlFor="rowSpacing" className="block text-sm font-medium text-gray-600 mb-1">Jarak Baris</label>
                 <div className="relative">
-                  <input value={formData.rowSpacing} onChange={handleChange} type="number" id="rowSpacing" name="rowSpacing" step="any" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
+                  <input value={formData.rowSpacing} onChange={handleChange} type="number" id="rowSpacing" name="rowSpacing" step="1" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
                   <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 text-sm">cm</span>
                 </div>
               </div>
               <div>
                 <label htmlFor="plantingDepth" className="block text-sm font-medium text-gray-600 mb-1">Kedalaman Tanam</label>
                 <div className="relative">
-                  <input value={formData.plantingDepth} onChange={handleChange} type="number" id="plantingDepth" name="plantingDepth" step="any" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
+                  <input value={formData.plantingDepth} onChange={handleChange} type="number" id="plantingDepth" name="plantingDepth" step="1" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
                   <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 text-sm">cm</span>
                 </div>
               </div>
               <div>
                 <label htmlFor="averageHeight" className="block text-sm font-medium text-gray-600 mb-1">Tinggi Rata-rata</label>
                 <div className="relative">
-                  <input value={formData.averageHeight} onChange={handleChange} type="number" id="averageHeight" name="averageHeight" step="any" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
+                  <input value={formData.averageHeight} onChange={handleChange} type="number" id="averageHeight" name="averageHeight" step="1" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
                   <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 text-sm">cm</span>
                 </div>
               </div>
@@ -226,13 +226,13 @@ export default function NewCropForm({ onClose, onSave, initialData }) {
               <div>
                 <label htmlFor="germinationRate" className="block text-sm font-medium text-gray-600 mb-1">Perkiraan Tingkat Perkecambahan</label>
                 <div className="relative">
-                  <input value={formData.germinationRate} onChange={handleChange} type="number" id="germinationRate" name="germinationRate" min="0" max="100" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
+                  <input value={formData.germinationRate} onChange={handleChange} type="number" id="germinationRate" name="germinationRate" min="0" max="100" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" step="1" />
                   <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 text-sm">%</span>
                 </div>
               </div>
               <div>
                 <label htmlFor="seedPerCell" className="block text-sm font-medium text-gray-600 mb-1">Benih per Lubang/Sel</label>
-                <input value={formData.seedPerCell} onChange={handleChange} type="number" id="seedPerCell" name="seedPerCell" min="1" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" />
+                <input value={formData.seedPerCell} onChange={handleChange} type="number" id="seedPerCell" name="seedPerCell" min="1" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500" step="1" />
               </div>
               <div>
                 <label htmlFor="lightProfile" className="block text-sm font-medium text-gray-600 mb-1">Profil Cahaya</label>
@@ -260,28 +260,28 @@ export default function NewCropForm({ onClose, onSave, initialData }) {
               <div>
                 <label htmlFor="daysToFlower" className="block text-sm font-medium text-gray-600 mb-1">Hari Berbunga</label>
                 <div className="relative">
-                  <input value={formData.daysToFlower} onChange={handleChange} type="number" id="daysToFlower" name="daysToFlower" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
+                  <input value={formData.daysToFlower} onChange={handleChange} type="number" id="daysToFlower" name="daysToFlower" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" step="1" />
                   <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 text-sm">hari</span>
                 </div>
               </div>
               <div>
                 <label htmlFor="daysToMaturity" className="block text-sm font-medium text-gray-600 mb-1">Hari Menuai</label>
                 <div className="relative">
-                  <input value={formData.daysToMaturity} onChange={handleChange} type="number" id="daysToMaturity" name="daysToMaturity" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
+                  <input value={formData.daysToMaturity} onChange={handleChange} type="number" id="daysToMaturity" name="daysToMaturity" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" step="1" />
                   <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 text-sm">hari</span>
                 </div>
               </div>
               <div>
                 <label htmlFor="harvestWindow" className="block text-sm font-medium text-gray-600 mb-1">Jendela Panen</label>
                 <div className="relative">
-                  <input value={formData.harvestWindow} onChange={handleChange} type="number" id="harvestWindow" name="harvestWindow" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
+                  <input value={formData.harvestWindow} onChange={handleChange} type="number" id="harvestWindow" name="harvestWindow" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" step="1" />
                   <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 text-sm">hari</span>
                 </div>
               </div>
               <div>
                 <label htmlFor="lossRate" className="block text-sm font-medium text-gray-600 mb-1">Perkiraan Tingkat Kehilangan</label>
                 <div className="relative">
-                  <input value={formData.lossRate} onChange={handleChange} type="number" id="lossRate" name="lossRate" min="0" max="100" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" />
+                  <input value={formData.lossRate} onChange={handleChange} type="number" id="lossRate" name="lossRate" min="0" max="100" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12" step="1" />
                   <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 text-sm">%</span>
                 </div>
               </div>

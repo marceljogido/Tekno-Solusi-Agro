@@ -32,19 +32,40 @@ import PageHeader from '@/components/layout/PageHeader';
 
 const GOOGLE_MAPS_LIBRARIES = ["drawing", "geometry"];
 
+// Add state for Area Type options - Move this outside components
+const AREA_TYPE_OPTIONS = [
+  { value: 'Lahan', label: 'Lahan' },
+  { value: 'Irigasi', label: 'Irigasi' },
+  { value: 'Gudang', label: 'Gudang' }
+];
+
 function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, mapScriptLoadError }) {
   const router = useRouter();
   const [showMap, setShowMap] = useState(true);
 
+  const formatArea = (area) => {
+    if (!area) return '-';
+    // Convert to number and remove trailing zeros
+    return Number(area).toString();
+  };
+
   console.log("TabelMedia received mediaList:", mediaList);
 
-  const mappedMedia = mediaList.map(media => ({
-    ...media,
-    name: media.name,
-    locationType: media.location_type,
-    area: media.area,
-    status: media.status,
-  }));
+  const mappedMedia = mediaList.map(media => {
+    // Find the corresponding AREA_TYPE_OPTIONS label for display using case-insensitive comparison
+    const areaTypeOption = AREA_TYPE_OPTIONS.find(opt => opt.value.toLowerCase() === media.locationType?.toLowerCase());
+    
+    // Use label if value matches (case-insensitive), else use raw locationType or geometry type or dash
+    const displayLocationType = areaTypeOption ? areaTypeOption.label : media.locationType || media.geometry?.type || '-';
+
+    return ({
+      ...media,
+      name: media.name,
+      locationType: displayLocationType, // Use the determined display value
+      area: media.area,
+      status: media.status,
+    });
+  });
 
   console.log("Mapped media data:", mappedMedia);
 
@@ -124,7 +145,7 @@ function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, map
                  {/* Render existing polygons, rectangles, circles for mediaList */}
                  {mediaList.map(media => {
                    if (!media.geometry) return null;
-                   const areaTypeOption = AREA_TYPE_OPTIONS.find(opt => opt.value === media.location_type);
+                   const areaTypeOption = AREA_TYPE_OPTIONS.find(opt => opt.value === media.locationType);
                    const displayColor = areaTypeOption ? areaTypeOption.color : '#10b981';
 
                    switch(media.geometry.type) {
@@ -171,7 +192,7 @@ function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, map
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {mappedMedia && mappedMedia.length > 0 ? (
-                  mappedMedia.map((media) => (
+                  mappedMedia.map((media, index) => (
                     <tr 
                       key={media.id} 
                       className="cursor-pointer hover:bg-gray-100"
@@ -179,22 +200,21 @@ function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, map
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{media.name || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{media.locationType || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{media.area || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatArea(media.area)} m²</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{media.status || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                         <DropdownMenu>
-                           <DropdownMenuTrigger asChild>
-                             <div onClick={e => e.stopPropagation()}>
-                               <Button variant="ghost" size="icon" className="h-8 w-8">
-                                 <MoreVertical className="h-4 w-4" />
-                               </Button>
-                             </div>
-                           </DropdownMenuTrigger>
-                           <DropdownMenuContent align="end">
-                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(media); }}>Edit</DropdownMenuItem>
-                             <DropdownMenuItem className="text-red-600" onClick={(e) => { e.stopPropagation(); onDelete(media.id); }}>Hapus</DropdownMenuItem>
-                           </DropdownMenuContent>
-                         </DropdownMenu>
+                         <button
+                           onClick={(e) => { e.stopPropagation(); onEdit(media); }}
+                           className="text-blue-600 hover:text-blue-900 mr-4"
+                         >
+                           Edit
+                         </button>
+                         <button
+                           onClick={(e) => { e.stopPropagation(); onDelete(media.id); }}
+                           className="text-red-600 hover:text-red-900"
+                         >
+                           Hapus
+                         </button>
                       </td>
                     </tr>
                   ))
@@ -217,42 +237,131 @@ function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, map
 function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScriptLoadError }) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(initialData || {});
-  const [plantingFormat, setPlantingFormat] = useState(initialData?.planting_format || '');
+  const [plantingFormat, setPlantingFormat] = useState(initialData?.planting_format || initialData?.Planting_format || '');
   const [areaGeometry, setAreaGeometry] = useState(null);
   const [drawingManager, setDrawingManager] = useState(null);
   const [selectedDrawingMode, setSelectedDrawingMode] = useState(null);
-  const [selectedAreaType, setSelectedAreaType] = useState('Lahan');
-  const [pricePerM2, setPricePerM2] = useState(initialData?.price_per_m2 || '');
+  const [selectedAreaType, setSelectedAreaType] = useState(initialData?.locationType || 'Lahan');
+  const [pricePerM2, setPricePerM2] = useState(initialData?.price_per_m2 || initialData?.Price_per_m2 || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [drawnOverlay, setDrawnOverlay] = useState(null);
 
-  // Add state for Area Type options
-  const AREA_TYPE_OPTIONS = [
-    { value: 'Lahan', label: 'Lahan', color: '#10b981' }, // Green
-    { value: 'Gudang', label: 'Gudang', color: '#f97316' }, // Orange
-    { value: 'Irigasi', label: 'Irigasi', color: '#3b82f6' }, // Blue
-  ];
+  const formatArea = (area) => {
+    if (!area) return '';
+    // Convert to number and remove trailing zeros
+    return Number(area).toString();
+  };
 
   useEffect(() => {
     if (initialData) {
       setForm(initialData);
-      setPlantingFormat(initialData.planting_format || '');
+      setPlantingFormat(initialData.planting_format || initialData.Planting_format || '');
       // TODO: Load areaGeometry from initialData if available
-       setPricePerM2(initialData.price_per_m2 || '');
+       setPricePerM2(initialData.price_per_m2 || initialData.Price_per_m2 || '');
     }
   }, [initialData]);
 
   // Effect to calculate estimated land value when area or price changes
   useEffect(() => {
-     const areaSize = form.areaSize || form.area || 0; // Use areaSize from form state
-     const price = pricePerM2 || 0;
-     const estimated = Math.round(areaSize) * price;
+     const price = parseFloat(pricePerM2) || 0;
+     let areaToUse = 0;
+
+     const panjangLahan = parseFloat(form.panjangLahan) || 0;
+     const lebarLahan = parseFloat(form.lebarLahan) || 0;
+
+     if (plantingFormat === 'bedengan' || plantingFormat === 'jajar_legowo') {
+       // Use calculated land area for bedengan and jajar_legowo
+       areaToUse = panjangLahan * lebarLahan;
+     } else {
+       // Use area from map (areaSize) for other formats (like 'baris')
+       areaToUse = form.areaSize || form.area || 0;
+     }
+
+     const estimated = Math.round(areaToUse) * price;
+
      // Only update if the calculated value is different to avoid infinite loops
      if (form.estimatedLandValue !== estimated) {
         setForm(f => ({ ...f, estimatedLandValue: estimated }));
      }
   }, [form.areaSize, form.area, pricePerM2, setForm, form.estimatedLandValue]); // Dependencies
+
+  useEffect(() => {
+    const panjangLahan = parseFloat(form.panjangLahan) || 0;
+    const lebarLahan = parseFloat(form.lebarLahan) || 0;
+    const luasArea = panjangLahan * lebarLahan;
+    setForm(f => ({ ...f, luasArea }));
+  }, [form.panjangLahan, form.lebarLahan]);
+
+  useEffect(() => {
+    if (plantingFormat === 'bedengan') {
+      const panjangLahan = parseFloat(form.panjangLahan) || 0;
+      const lebarLahan = parseFloat(form.lebarLahan) || 0;
+      const panjangBed = parseFloat(form.bedLength || form.bed_length) || 0;
+      const lebarBed = parseFloat(form.bedWidth || form.bed_width) || 0;
+      const jumlahBed = parseFloat(form.numberOfBeds || form.number_of_beds) || 0;
+
+      // Calculate total land area
+      const luasArea = panjangLahan * lebarLahan;
+
+      // Calculate total bedengan area
+      const luasTotalBedengan = panjangBed * lebarBed * jumlahBed;
+
+      setForm(f => ({
+        ...f,
+        luasArea,
+        luasTotalBedengan
+      }));
+    }
+  }, [
+    form.panjangLahan,
+    form.lebarLahan,
+    form.bedLength,
+    form.bed_length,
+    form.bedWidth,
+    form.bed_width,
+    form.numberOfBeds,
+    form.number_of_beds,
+    plantingFormat
+  ]);
+
+  useEffect(() => {
+    if (plantingFormat === 'jajar_legowo') {
+      const panjangLahan = parseFloat(form.panjangLahan) || 0;
+      const lebarLahan = parseFloat(form.lebarLahan) || 0;
+      const lebarLegowo = parseFloat(form.lebarLegowo) || 0;
+      const jarakAntarBaris = parseFloat(form.jarakAntarBaris) || 0;
+      const jumlahBarisPerLegowo = parseFloat(form.jumlahBarisPerLegowo) || 0;
+      const jarakAntarTanaman = parseFloat(form.jarakAntarTanaman) || 0;
+
+      // Calculate total land area
+      const luasArea = panjangLahan * lebarLahan;
+
+      // Calculate number of legowo units
+      const lebarUnitLegowo = (jumlahBarisPerLegowo * jarakAntarBaris) + lebarLegowo;
+      const jumlahUnitLegowo = Math.floor(lebarLahan / lebarUnitLegowo);
+
+      // Calculate total plants
+      const tanamanPerBaris = Math.floor(panjangLahan / jarakAntarTanaman);
+      const tanamanPerUnit = tanamanPerBaris * jumlahBarisPerLegowo;
+      const totalTanaman = jumlahUnitLegowo * tanamanPerUnit;
+
+      setForm(f => ({
+        ...f,
+        luasArea,
+        jumlahUnitLegowo,
+        totalTanaman
+      }));
+    }
+  }, [
+    form.panjangLahan,
+    form.lebarLahan,
+    form.lebarLegowo,
+    form.jarakAntarBaris,
+    form.jarakAntarTanaman,
+    form.jumlahBarisPerLegowo,
+    plantingFormat
+  ]);
 
   const STATUS_OPTIONS = [
     'Aktif',
@@ -282,13 +391,18 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
       desc: 'Satu jenis tanaman dalam baris. Contoh: Jagung, Kedelai, Kentang, dll.'
     },
     {
+      value: 'jajar_legowo',
+      label: 'Jajar Legowo',
+      desc: 'Sistem tanam padi dengan pola jarak tanam yang berbeda. Contoh: Padi.'
+    },
+    {
       value: 'none',
       label: 'Tidak Ada',
       desc: 'Tidak ada format penanaman (misal: Gudang).'
     }
   ];
 
-  const areaType = form.location_type || form.area?.type || '';
+  const areaType = form.locationType || form.area?.type || selectedAreaType || '';
   const hidePlantingFormat = areaType === 'Gudang'; // Assuming 'Gudang' means no planting format
 
   const parseNum = val => Number(String(val || '0').replace(',', '.'));
@@ -296,13 +410,11 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
   const handleNext = () => {
     // Validate based on step before moving next
     if (step === 1) {
-       if (!areaGeometry) {
-          alert('Mohon gambar area di peta terlebih dahulu.');
-          return;
-       }
-        // Validation for selectedAreaType is now tied to drawing completion
-        // and will be saved with the geometry in handleAreaComplete
-        // No separate check needed here if areaGeometry implies type is set
+      // Only validate area geometry when trying to proceed to step 2
+      if (!areaGeometry) {
+        alert('Mohon gambar area di peta terlebih dahulu.');
+        return;
+      }
     }
     setStep(step + 1);
   };
@@ -340,7 +452,6 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
        const bounds = shape.getBounds();
        const ne = bounds.getNorthEast();
        const sw = bounds.getSouthWest();
-       // Store rectangle as two points or a polygon depending on backend needs
        geometry = { type: 'Rectangle', coordinates: [[sw.lng(), sw.lat()], [ne.lng(), ne.lat()]] };
        if (window.google.maps.geometry) {
            areaSize = window.google.maps.geometry.spherical.computeArea(shape.getBounds());
@@ -349,27 +460,55 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
        const center = shape.getCenter();
        const radius = shape.getRadius();
        geometry = { type: 'Circle', coordinates: [center.lng(), center.lat()], radius: radius };
-        areaSize = Math.PI * Math.pow(radius, 2); // Simple circle area formula
+        areaSize = Math.PI * Math.pow(radius, 2);
     }
 
     if (geometry) {
       setAreaGeometry(geometry);
-       // Calculate estimated land value when area geometry is set or price changes
-       const estimated = Math.round(areaSize) * (pricePerM2 || 0);
-       setForm(f => ({
-         ...f,
-         areaSize: Math.round(areaSize),
-         location_type: selectedAreaType,
-         estimatedLandValue: estimated, // Update estimated land value
-       }));
+      const estimated = Math.round(areaSize) * (pricePerM2 || 0);
+      setForm(f => ({
+        ...f,
+        areaSize: Math.round(areaSize),
+        locationType: selectedAreaType,
+        estimatedLandValue: estimated,
+      }));
+
+      // Disable drawing mode after area is drawn
+      if (drawingManager) {
+        drawingManager.setDrawingMode(null);
+        setSelectedDrawingMode(null);
+      }
     }
   };
 
    const handleDrawingModeChange = (mode) => {
-     if (drawingManager) {
-        drawingManager.setDrawingMode(window.google.maps.drawing.OverlayType[mode.toUpperCase()]);
-         setSelectedDrawingMode(mode);
-     }
+     if (drawingManager && !areaGeometry) { // Only allow drawing if no area exists
+      // Reset previous mode if any
+      if (selectedDrawingMode) {
+        drawingManager.setDrawingMode(null);
+      }
+      
+      // Set new mode
+      drawingManager.setDrawingMode(window.google.maps.drawing.OverlayType[mode.toUpperCase()]);
+      setSelectedDrawingMode(mode);
+      
+      // Show instruction based on mode
+      let instruction = '';
+      switch(mode) {
+        case 'POLYGON':
+          instruction = 'Klik pada peta untuk membuat titik-titik poligon. Klik titik pertama untuk menutup poligon.';
+          break;
+        case 'RECTANGLE':
+          instruction = 'Klik dan seret untuk membuat persegi panjang.';
+          break;
+        case 'CIRCLE':
+          instruction = 'Klik pada peta untuk menentukan pusat lingkaran, lalu seret untuk menentukan radius.';
+          break;
+      }
+      if (instruction) {
+        alert(instruction);
+      }
+    }
    };
 
    const handleResetArea = () => {
@@ -392,6 +531,39 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
 
    const handleAreaTypeChange = (type) => {
       setSelectedAreaType(type);
+      // Update drawing manager options with new color if it exists
+      if (drawingManager) {
+        const color = AREA_TYPE_OPTIONS.find(opt => opt.value === type)?.color || '#10b981';
+        drawingManager.setOptions({
+          polygonOptions: {
+            fillColor: color,
+            strokeColor: color,
+            fillOpacity: 0.5,
+            strokeWeight: 2,
+            clickable: true,
+            editable: true,
+            zIndex: 1
+          },
+          rectangleOptions: {
+            fillColor: color,
+            strokeColor: color,
+            fillOpacity: 0.5,
+            strokeWeight: 2,
+            clickable: true,
+            editable: true,
+            zIndex: 1
+          },
+          circleOptions: {
+            fillColor: color,
+            strokeColor: color,
+            fillOpacity: 0.5,
+            strokeWeight: 2,
+            clickable: true,
+            editable: true,
+            zIndex: 1
+          }
+        });
+      }
    };
 
   const handleSubmit = async (e) => {
@@ -402,6 +574,12 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
     // Validate required fields
     if (!form.name) {
       setError('Nama media harus diisi');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!form.locationType) {
+      setError('Tipe lokasi harus dipilih');
       setIsSubmitting(false);
       return;
     }
@@ -418,23 +596,48 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
       return;
     }
 
+    // Calculate jajar legowo area if planting format is jajar_legowo
+    let calculatedLuasTotalJajarLegowo = null;
+    if (plantingFormat === 'jajar_legowo') {
+      const panjang = parseNum(form.panjangLahan);
+      const lebar = parseNum(form.lebarLahan);
+      if (panjang && lebar) {
+        calculatedLuasTotalJajarLegowo = panjang * lebar;
+      }
+    }
+
     const dataToSend = {
       name: form.name || '',
-      internal_id: form.internalId || form.internal_id || '',
-      electronic_id: form.electronicId || form.electronic_id || '',
-      location_type: form.location_type || '',
-      planting_format: plantingFormat || '',
-      number_of_beds: parseNum(form.numberOfBeds || ''),
-      bed_length: parseNum(form.bedLength || ''),
-      bed_width: parseNum(form.bedWidth || ''),
-      area: parseNum(form.areaSize || ''),
-      estimated_land_value: parseNum(form.estimatedLandValue || ''),
-      price_per_m2: parseNum(pricePerM2 || ''),
+      internalId: form.internalId || form.internal_id || '',
+      electronicId: form.electronicId || form.electronic_id || '',
+      locationType: form.locationType || selectedAreaType || '',
+      plantingFormat: plantingFormat || '',
+      numberOfBeds: parseNum(form.numberOfBeds || form.number_of_beds || ''),
+      bedLength: parseNum(form.bedLength || form.bed_length || ''),
+      bedWidth: parseNum(form.bedWidth || form.bed_width || ''),
+      panjangLahan: parseNum(form.panjangLahan || ''),
+      lebarLahan: parseNum(form.lebarLahan || ''),
+      lebarLegowo: parseNum(form.lebarLegowo || ''),
+      jarakAntarTanaman: parseNum(form.jarakAntarTanaman || ''),
+      jarakAntarBaris: parseNum(form.jarakAntarBaris || ''),
+      jumlahBarisPerLegowo: parseNum(form.jumlahBarisPerLegowo || ''),
+      luasTotalBedengan: parseNum(form.luasTotalBedengan || ''),
+      luasTotalJajarLegowo: calculatedLuasTotalJajarLegowo || parseNum(form.luasTotalJajarLegowo || ''),
+      pricePerM2: parseNum(pricePerM2 || ''),
+      area: parseNum(form.areaSize || form.area || ''),
+      estimatedLandValue: parseNum(form.estimatedLandValue || form.estimated_land_value || ''),
       status: form.status || '',
-      light_profile: form.lightProfile || '',
-      grazing_rest_days: parseNum(form.grazingRestDays || ''),
+      lightProfile: form.lightProfile || form.light_profile || '',
+      grazingRestDays: parseNum(form.grazingRestDays || form.grazing_rest_days || ''),
       description: form.description || '',
     };
+
+    // Add geometry to dataToSend if available
+    if (areaGeometry) {
+        dataToSend.geometry = areaGeometry;
+    }
+
+    console.log("Sending data to server:", dataToSend);
 
     try {
       let res;
@@ -453,18 +656,15 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
       }
 
       if (!res.ok) {
-        // Try to parse JSON first, but fallback to text if it fails (HTML response)
         let errorDetail = 'Failed to save media location';
         try {
           const errorData = await res.json();
           errorDetail = errorData.message || JSON.stringify(errorData);
         } catch (jsonError) {
-          // If JSON parsing fails, read as text (likely HTML error page)
           try {
             const errorText = await res.text();
-            errorDetail = `Server Error (Status: ${res.status}): ${errorText.substring(0, 200)}...`; // Limit text
+            errorDetail = `Server Error (Status: ${res.status}): ${errorText.substring(0, 200)}...`;
           } catch (textError) {
-            // Fallback
             errorDetail = `Server Error (Status: ${res.status})`;
           }
         }
@@ -488,7 +688,14 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
         return (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Area Peta</h2>
-            <p className="text-sm text-muted-foreground">Pilih tipe area lalu gambar polanya dengan klik tiap sudut pada peta.</p>
+            <p className="text-sm text-muted-foreground">
+              Pilih tipe area lalu gambar polanya dengan klik tiap sudut pada peta.
+              {!areaGeometry && (
+                <span className="text-red-500 ml-2">
+                  *Area harus digambar sebelum melanjutkan
+                </span>
+              )}
+            </p>
 
             {/* Kontrol Area - Reorganized and styled */}
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
@@ -509,26 +716,44 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
                 {/* Group drawing buttons */}          
                 <div className="flex gap-2">
                    <Button 
-                      variant={selectedDrawingMode === 'polygon' ? 'default' : 'outline'} // Default color when active
-                      onClick={() => handleDrawingModeChange('polygon')}
+                      variant={selectedDrawingMode === 'polygon' ? 'default' : 'outline'}
+                      onClick={() => {
+                        if (areaGeometry) {
+                          alert('Area sudah digambar. Silakan reset area terlebih dahulu jika ingin menggambar ulang.');
+                          return;
+                        }
+                        handleDrawingModeChange('polygon');
+                      }}
                       className={`w-full sm:w-auto ${selectedDrawingMode === 'polygon' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-                      disabled={!!areaGeometry} // Disable if area is already drawn
+                      disabled={!!areaGeometry}
                    >
                      Gambar Polygon
                    </Button>
                     <Button 
                       variant={selectedDrawingMode === 'rectangle' ? 'default' : 'outline'}
-                      onClick={() => handleDrawingModeChange('rectangle')}
-                       className={`w-full sm:w-auto ${selectedDrawingMode === 'rectangle' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-                      disabled={!!areaGeometry} // Disable if area is already drawn
+                      onClick={() => {
+                        if (areaGeometry) {
+                          alert('Area sudah digambar. Silakan reset area terlebih dahulu jika ingin menggambar ulang.');
+                          return;
+                        }
+                        handleDrawingModeChange('rectangle');
+                      }}
+                      className={`w-full sm:w-auto ${selectedDrawingMode === 'rectangle' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
+                      disabled={!!areaGeometry}
                    >
                      Gambar Kotak
                    </Button>
                     <Button 
                       variant={selectedDrawingMode === 'circle' ? 'default' : 'outline'}
-                      onClick={() => handleDrawingModeChange('circle')}
-                       className={`w-full sm:w-auto ${selectedDrawingMode === 'circle' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-                      disabled={!!areaGeometry} // Disable if area is already drawn
+                      onClick={() => {
+                        if (areaGeometry) {
+                          alert('Area sudah digambar. Silakan reset area terlebih dahulu jika ingin menggambar ulang.');
+                          return;
+                        }
+                        handleDrawingModeChange('circle');
+                      }}
+                      className={`w-full sm:w-auto ${selectedDrawingMode === 'circle' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
+                      disabled={!!areaGeometry}
                    >
                      Gambar Lingkaran
                    </Button>
@@ -565,18 +790,43 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
                   center={{ lat: -7.4355904, lng: 112.7164527 }}
                   zoom={17}
                   onLoad={map => {
+                    const color = AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981';
                     const drawingManager = new window.google.maps.drawing.DrawingManager({
-                       drawingMode: null, // Start with no drawing mode
-                       drawingControl: false, // We will use our own buttons
-                       polygonOptions: { fillColor: AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981', strokeColor: AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981', fillOpacity: 0.5, strokeWeight: 2, clickable: true, editable: true, zIndex: 1 },
-                       rectangleOptions: { fillColor: AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981', strokeColor: AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981', fillOpacity: 0.5, strokeWeight: 2, clickable: true, editable: true, zIndex: 1 },
-                       circleOptions: { fillColor: AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981', strokeColor: AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981', fillOpacity: 0.5, strokeWeight: 2, clickable: true, editable: true, zIndex: 1 },
+                      drawingMode: null,
+                      drawingControl: false,
+                      polygonOptions: {
+                        fillColor: color,
+                        strokeColor: color,
+                        fillOpacity: 0.5,
+                        strokeWeight: 2,
+                        clickable: true,
+                        editable: true,
+                        zIndex: 1
+                      },
+                      rectangleOptions: {
+                        fillColor: color,
+                        strokeColor: color,
+                        fillOpacity: 0.5,
+                        strokeWeight: 2,
+                        clickable: true,
+                        editable: true,
+                        zIndex: 1
+                      },
+                      circleOptions: {
+                        fillColor: color,
+                        strokeColor: color,
+                        fillOpacity: 0.5,
+                        strokeWeight: 2,
+                        clickable: true,
+                        editable: true,
+                        zIndex: 1
+                      }
                     });
-                     drawingManager.setMap(map);
+                    drawingManager.setMap(map);
                     setDrawingManager(drawingManager);
 
                     window.google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
-                       handleAreaComplete(event);
+                      handleAreaComplete(event);
                     });
                   }}
                   onUnmount={() => {
@@ -632,21 +882,26 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Tipe Lokasi</label>
-                 {/* TODO: Add Tipe Lokasi selection */}
-                <Input
-                  type="text"
-                  value={form.location_type || form.area?.type || ''}
-                   onChange={(e) => setForm({ ...form, location_type: e.target.value })}
-                   placeholder="Contoh: Lahan, Irigasi, Gudang"
-                />
+                <select
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                  value={form.locationType || selectedAreaType || ''}
+                  onChange={(e) => setForm({ ...form, locationType: e.target.value })}
+                >
+                  <option value="">Pilih Tipe Lokasi</option>
+                  {AREA_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
             {!hidePlantingFormat && (
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">Format Penanaman</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                   {plantingFormats.map(format => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {plantingFormats.map(format => (
                     <Card 
                       key={format.value} 
                       className={
@@ -659,67 +914,171 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
                          <p className="text-sm text-muted-foreground mt-1">{format.desc}</p>
                       </CardContent>
                     </Card>
-                   ))}
+                  ))}
                 </div>
               </div>
             )}
 
-             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-               {plantingFormat === 'bedengan' && (
-                 <>
+             {/* Input fields based on Planting Format */}
+             {plantingFormat === 'bedengan' && (
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Jumlah Bedengan</label>
-                      <Input
-                         type="number"
-                         value={form.numberOfBeds || form.number_of_beds || ''}
-                         onChange={(e) => setForm({ ...form, numberOfBeds: e.target.value })}
-                      />
+                     <label className="block text-sm font-medium text-gray-700">Panjang Lahan (m)</label>
+                     <Input
+                       type="number"
+                       value={form.panjangLahan || ''}
+                       onChange={(e) => setForm({ ...form, panjangLahan: e.target.value })}
+                     />
                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Panjang Bedengan (m)</label>
-                      <Input
-                         type="number"
-                         value={form.bedLength || form.bed_length || ''}
-                         onChange={(e) => setForm({ ...form, bedLength: e.target.value })}
-                      />
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700">Lebar Lahan (m)</label>
+                     <Input
+                       type="number"
+                       value={form.lebarLahan || ''}
+                       onChange={(e) => setForm({ ...form, lebarLahan: e.target.value })}
+                     />
                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Lebar Bedengan (m)</label>
-                      <Input
-                         type="number"
-                         value={form.bedWidth || form.bed_width || ''}
-                         onChange={(e) => setForm({ ...form, bedWidth: e.target.value })}
-                      />
+                 </div>
+
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700">Panjang Bedengan (m)</label>
+                     <Input
+                       type="number"
+                       value={form.bedLength || form.bed_length || ''}
+                       onChange={(e) => setForm({ ...form, bedLength: e.target.value })}
+                     />
                    </div>
-                 </>
-               )}
-                <div className="sm:col-span-1">
-                   <label className="block text-sm font-medium text-gray-700">Luas Area (m²)</label>
-                   <Input
-                      type="number"
-                      value={form.areaSize || form.area || ''}
-                      onChange={(e) => setForm({ ...form, areaSize: e.target.value })}
-                       disabled // Area size is calculated from map
-                   />
-                </div>
-                <div className="sm:col-span-1">
-                   <label className="block text-sm font-medium text-gray-700">Harga per meter persegi</label>
-                   <Input
-                      type="number"
-                      value={pricePerM2 || ''}
-                      onChange={(e) => setPricePerM2(e.target.valueAsNumber || '')}
-                      placeholder="Contoh: 100000"
-                   />
-                </div>
-                <div className="sm:col-span-2">
-                   <label className="block text-sm font-medium text-gray-700">Estimasi Nilai Lahan</label>
-                   <Input
-                      type="text"
-                      value={form.estimatedLandValue ? `Rp. ${form.estimatedLandValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}` : ''}
-                      disabled
-                   />
-                </div>
-             </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700">Lebar Bedengan (m)</label>
+                     <Input
+                       type="number"
+                       value={form.bedWidth || form.bed_width || ''}
+                       onChange={(e) => setForm({ ...form, bedWidth: e.target.value })}
+                     />
+                   </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700">Jumlah Bedengan</label>
+                     <Input
+                       type="number"
+                       value={form.numberOfBeds || form.number_of_beds || ''}
+                       onChange={(e) => setForm({ ...form, numberOfBeds: e.target.value })}
+                     />
+                   </div>
+                 </div>
+               </div>
+             )}
+
+             {plantingFormat === 'jajar_legowo' && (
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700">Panjang Lahan (m)</label>
+                     <Input
+                       type="number"
+                       value={form.panjangLahan || ''}
+                       onChange={(e) => setForm({ ...form, panjangLahan: e.target.value })}
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700">Lebar Lahan (m)</label>
+                     <Input
+                       type="number"
+                       value={form.lebarLahan || ''}
+                       onChange={(e) => setForm({ ...form, lebarLahan: e.target.value })}
+                     />
+                   </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700">Lebar Legowo (m)</label>
+                     <Input
+                       type="number"
+                       value={form.lebarLegowo || ''}
+                       onChange={(e) => setForm({ ...form, lebarLegowo: e.target.value })}
+                       placeholder="Contoh: 0.8"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700">Jumlah Baris per Legowo</label>
+                     <Input
+                       type="number"
+                       value={form.jumlahBarisPerLegowo || ''}
+                       onChange={(e) => setForm({ ...form, jumlahBarisPerLegowo: e.target.value })}
+                       placeholder="Contoh: 2"
+                     />
+                   </div>
+                 </div>
+               </div>
+             )}
+
+             {/* Informasi Luas Area - Combined and simplified */}
+             {!hidePlantingFormat && (
+               <div className="border-t pt-4 mt-4">
+                 <h3 className="text-sm font-medium text-gray-700 mb-4">Informasi Luas Area</h3>
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                   {/* Show calculated area unless planting format is 'baris' */}
+                   {plantingFormat !== 'baris' && (
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700">Luas Area dari Perhitungan (m²)</label>
+                       <Input
+                         type="number"
+                         value={form.luasArea || ''}
+                         disabled
+                       />
+                     </div>
+                   )}
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700">Luas Area dari Peta (m²)</label>
+                     <Input
+                       type="number"
+                       value={form.areaSize || ''}
+                       disabled={plantingFormat !== 'baris'}
+                     />
+                   </div>
+                   {/* Add Luas Total Bedengan for bedengan format */}
+                   {plantingFormat === 'bedengan' && (
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700">Luas Total Bedengan (m²)</label>
+                       <Input
+                         type="number"
+                         value={form.luasTotalBedengan || ''}
+                         disabled
+                       />
+                     </div>
+                   )}
+                 </div>
+               </div>
+             )}
+
+             {/* Harga per meter persegi and Estimasi Nilai Lahan - Always visible when not Gudang */}
+             {!hidePlantingFormat && (
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                     <label className="block text-sm font-medium text-gray-700">Harga per meter persegi</label>
+                     <Input
+                        type="number"
+                        value={pricePerM2 || ''}
+                        onChange={(e) => setPricePerM2(e.target.valueAsNumber || '')}
+                        placeholder="Contoh: 100000"
+                     />
+                  </div>
+                  <div>
+                     <label className="block text-sm font-medium text-gray-700">Estimasi Nilai Lahan</label>
+                     <Input
+                        type="text"
+                        value={form.estimatedLandValue ? `Rp. ${form.estimatedLandValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}` : ''}
+                        disabled
+                     />
+                  </div>
+               </div>
+             )}
+
           </div>
         );
       case 3:
@@ -730,7 +1089,7 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
               <div>
                 <label className="block text-sm font-medium text-gray-700">Status</label>
                 <select
-                  value={form.status || ''}
+                  value={form.status || initialData?.status || ''}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                 >
@@ -745,7 +1104,7 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
                <div>
                 <label className="block text-sm font-medium text-gray-700">Profil Cahaya</label>
                 <select
-                  value={form.lightProfile || form.light_profile || ''}
+                  value={form.lightProfile || initialData?.light_profile || initialData?.Light_profile || ''}
                   onChange={(e) => setForm({ ...form, lightProfile: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                 >
@@ -761,7 +1120,7 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
                  <label className="block text-sm font-medium text-gray-700">Hari Istirahat Penggembalaan</label>
                  <Input
                     type="number"
-                    value={form.grazingRestDays || form.grazing_rest_days || ''}
+                    value={form.grazingRestDays || initialData?.grazing_rest_days || initialData?.Grazing_rest_days || ''}
                     onChange={(e) => setForm({ ...form, grazingRestDays: e.target.value })}
                  />
               </div>
@@ -770,7 +1129,7 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
                  {/* TODO: Change to textarea */}
                  <Input
                     type="text"
-                    value={form.description || ''}
+                    value={form.description || initialData?.description || ''}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                  />
               </div>
@@ -947,17 +1306,16 @@ export default function MediaManagement() {
     try {
       const res = await fetch(`/api/media_locations/${id}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         credentials: 'include'
       });
       
       if (!res.ok) {
-        const data = await res.json();
-        if (res.status === 401) {
-          router.push('/auth/login');
-          return;
-        }
-        throw new Error(data.error || 'Gagal menghapus media');
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Gagal menghapus media');
       }
       
       await fetchMedia();
@@ -965,7 +1323,7 @@ export default function MediaManagement() {
     } catch (err) {
       console.error('Error deleting media:', err);
       setError(err.message);
-      alert(err.message);
+      alert('Gagal menghapus media: ' + err.message);
     } finally {
       setIsLoading(false);
     }
