@@ -58,24 +58,21 @@ export default function CropPlanningPage() {
 
   return (
     <div className="space-y-4 overflow-y-auto">
-      <PageHeader title="Rencana Tanam" />
-      
-      {/* Breadcrumb */}
-      <nav className="text-sm mb-4" aria-label="Breadcrumb">
-        <ol className="list-none p-0 inline-flex space-x-2">
-          <li className="flex items-center">
-            <span className="text-gray-500 hover:text-gray-700">Crop Production</span>
-          </li>
-          <li>
-            <span className="text-gray-400">/</span>
-          </li>
-          <li className="flex items-center">
-            <span className="text-gray-700 font-medium">Crop Planning</span>
-          </li>
-        </ol>
-      </nav>
-
+      <PageHeader title="Crop Planning" />
       <div className="container mx-auto p-4 md:p-8 pt-24 md:pt-20">
+        <nav className="text-sm mb-4" aria-label="Breadcrumb">
+          <ol className="list-none p-0 inline-flex space-x-2">
+            <li className="flex items-center">
+              <span className="text-gray-500 hover:text-gray-700">Crop Production</span>
+            </li>
+            <li>
+              <span className="text-gray-400">/</span>
+            </li>
+            <li className="flex items-center">
+              <span className="text-gray-700 font-medium">Crop Planning</span>
+            </li>
+          </ol>
+        </nav>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Rencana Tanam</h1>
           <button
@@ -110,7 +107,7 @@ export default function CropPlanningPage() {
 
         <AnimatePresence>
           {isFormOpen && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50 p-4">
               <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <AddNewPlanForm 
                   onClose={handleCloseForm}

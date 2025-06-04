@@ -16,11 +16,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-const chartData = [
-  { crop: "Jagung", qty: 186 },
-  { crop: "Cabai", qty: 305 },
-  { crop: "Padi", qty: 237 },
-];
 
 const chartConfig = {
   qty: {
@@ -29,7 +24,13 @@ const chartConfig = {
   },
 };
 
-export function AppBarChart() {
+export function AppBarChart({ data = [] }) {
+  // Transform data for chart
+  const chartData = data.map(crop => ({
+    crop: crop.name,
+    qty: crop.totalQuantity
+  }));
+
   return (
     <ChartContainer config={chartConfig}>
       <BarChart

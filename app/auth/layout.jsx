@@ -17,7 +17,7 @@ const layout = ({ children }) => {
             objectPosition: "center",
           }}
         />
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-md"></div>
+        <div className="absolute inset-0 bg-transparent backdrop-blur-md"></div>
       </div>
       {/* Main content container */}
       <div className="flex min-h-screen items-center justify-center p-4">

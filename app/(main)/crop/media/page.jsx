@@ -35,43 +35,116 @@ const GOOGLE_MAPS_LIBRARIES = ["drawing", "geometry"];
 
 // Add state for Area Type options - Move this outside components
 const AREA_TYPE_OPTIONS = [
-  { value: 'Lahan', label: 'Lahan' },
-  { value: 'Irigasi', label: 'Irigasi' },
-  { value: 'Gudang', label: 'Gudang' }
+  { value: 'Lahan', label: 'Lahan', color: '#10b981' },      // hijau
+  { value: 'Irigasi', label: 'Irigasi', color: '#3b82f6' },  // biru
+  { value: 'Gudang', label: 'Gudang', color: '#f59e42' }     // oranye
 ];
 
-function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, mapScriptLoadError }) {
+function getGeometryCenter(geometry) {
+  if (!geometry) return { lat: -6.645365862602853, lng: 107.68567603382922 };
+  if (geometry.type === 'Polygon' && geometry.coordinates && geometry.coordinates[0].length > 0) {
+    const coords = geometry.coordinates[0];
+    const avgLat = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
+    const avgLng = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
+    return { lat: avgLat, lng: avgLng };
+  }
+  if (geometry.type === 'Rectangle' && geometry.coordinates && geometry.coordinates.length === 2) {
+    const [sw, ne] = geometry.coordinates;
+    return {
+      lat: (sw[1] + ne[1]) / 2,
+      lng: (sw[0] + ne[0]) / 2
+    };
+  }
+  if (geometry.type === 'Circle' && geometry.coordinates && geometry.coordinates.length === 2) {
+    return { lat: geometry.coordinates[1], lng: geometry.coordinates[0] };
+  }
+  return { lat: -6.645365862602853, lng: 107.68567603382922 };
+}
+
+function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, mapScriptLoadError, setMapCenter }) {
   const router = useRouter();
   const [showMap, setShowMap] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [mapZoom, setMapZoom] = useState(17);
 
   const formatArea = (area) => {
     if (!area) return '-';
-    // Convert to number and remove trailing zeros
     return Number(area).toString();
   };
 
-  console.log("TabelMedia received mediaList:", mediaList);
-
+  // Normalize the data before filtering
   const mappedMedia = mediaList.map(media => {
-    // Find the corresponding AREA_TYPE_OPTIONS label for display using case-insensitive comparison
-    const areaTypeOption = AREA_TYPE_OPTIONS.find(opt => opt.value.toLowerCase() === media.locationType?.toLowerCase());
+    // Normalize locationType to lowercase for consistent comparison
+    const locationType = (media.locationType || '').toLowerCase().trim();
+    const areaTypeOption = AREA_TYPE_OPTIONS.find(opt => 
+      opt.value.toLowerCase() === locationType
+    );
     
-    // Use label if value matches (case-insensitive), else use raw locationType or geometry type or dash
-    const displayLocationType = areaTypeOption ? areaTypeOption.label : media.locationType || media.geometry?.type || '-';
-
-    return ({
+    return {
       ...media,
-      name: media.name,
-      locationType: displayLocationType, // Use the determined display value
+      name: media.name || '',
+      locationType: areaTypeOption ? areaTypeOption.value : locationType,
       area: media.area,
       status: media.status,
-    });
+      geometry: media.geometry
+    };
   });
 
-  console.log("Mapped media data:", mappedMedia);
+  // Enhanced filter logic with case-insensitive comparison
+  const filteredMedia = mappedMedia.filter(media => {
+    // Filter berdasarkan nama (case insensitive)
+    const nameMatch = !searchTerm || 
+      (media.name && media.name.toLowerCase().includes(searchTerm.toLowerCase().trim()));
+    
+    // Filter berdasarkan tipe lokasi (case insensitive)
+    const typeMatch = !filterType || 
+      media.locationType.toLowerCase() === filterType.toLowerCase();
+    
+    // Debug logs
+    console.log('Filtering media:', {
+      mediaName: media.name,
+      mediaLocationType: media.locationType,
+      filterType: filterType,
+      nameMatch,
+      typeMatch
+    });
+    
+    return nameMatch && typeMatch;
+  });
+
+  // Function to handle search and zoom
+  const handleSearch = (searchValue) => {
+    setSearchTerm(searchValue);
+    
+    // If there's a search term and filtered results, zoom to the first result
+    if (searchValue && filteredMedia.length > 0) {
+      const firstResult = filteredMedia[0];
+      if (firstResult.geometry) {
+        let center = getGeometryCenter(firstResult.geometry);
+        setMapCenter(center);
+        setMapZoom(19); // Zoom in closer when searching
+        setShowMap(true); // Switch to map view when searching
+      }
+    } else {
+      // Reset zoom when search is cleared
+      setMapZoom(17);
+    }
+  };
+
+  // Handler untuk Enter pada input pencarian
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter' && filteredMedia.length > 0 && filteredMedia[0].geometry) {
+      const geometry = filteredMedia[0].geometry;
+      let center = getGeometryCenter(geometry);
+      setMapCenter(center);
+      setMapZoom(19); // Zoom in closer when searching
+      setShowMap(true);
+    }
+  };
 
   return (
-    <div className="p-4 md:p-8">
+    <>
       <nav className="text-sm mb-4" aria-label="Breadcrumb">
         <ol className="list-none p-0 inline-flex space-x-2">
           <li className="flex items-center">
@@ -85,9 +158,8 @@ function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, map
           </li>
         </ol>
       </nav>
-
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold">Manajemen Media</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Manajemen Media</h1>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
            <Button
              onClick={onAdd}
@@ -103,15 +175,43 @@ function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, map
             </Button>
         </div>
       </div>
-
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="bg-white shadow-lg rounded-lg p-6">
-         {/* Search and Filter - Simplified for now */}
+         {/* Search and Filter - Updated UI */}
          <div className="flex flex-col md:flex-row gap-4 mb-6">
             <Input
-              placeholder="Cari di sini..."
+              placeholder="Cari berdasarkan nama..."
+              value={searchTerm}
+              onChange={e => handleSearch(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
               className="w-full md:w-64"
             />
-             <Button variant="outline" className="w-full md:w-auto">Filter</Button>
+            <select
+              value={filterType}
+              onChange={e => {
+                console.log('Filter type changed to:', e.target.value);
+                setFilterType(e.target.value);
+                // If filtering by type and there are results, zoom to first result
+                if (e.target.value && filteredMedia.length > 0) {
+                  const firstResult = filteredMedia[0];
+                  if (firstResult.geometry) {
+                    let center = getGeometryCenter(firstResult.geometry);
+                    setMapCenter(center);
+                    setMapZoom(19);
+                    setShowMap(true);
+                  }
+                } else {
+                  setMapZoom(17);
+                }
+              }}
+              className="w-full md:w-64 border border-gray-300 rounded-md shadow-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            >
+              <option value="">Semua Tipe</option>
+              {AREA_TYPE_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
          </div>
 
         {showMap ? (
@@ -128,55 +228,11 @@ function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, map
                 </div>
              )}
              {isMapScriptLoaded && !mapScriptLoadError && (
-               <GoogleMap
-                 mapContainerStyle={{
-                   width: '100%',
-                   height: '100%',
-                 }}
-                 center={{ lat: -7.4355904, lng: 112.7164527 }}
-                 zoom={17}
-                 options={{
-                   mapTypeId: 'satellite',
-                   streetViewControl: false,
-                   fullscreenControl: false,
-                   mapTypeControl: true,
-                   zoomControl: true,
-                 }}
-               >
-                 {/* Render existing polygons, rectangles, circles for mediaList */}
-                 {mediaList.map(media => {
-                   if (!media.geometry) return null;
-                   const areaTypeOption = AREA_TYPE_OPTIONS.find(opt => opt.value === media.locationType);
-                   const displayColor = areaTypeOption ? areaTypeOption.color : '#10b981';
-
-                   switch(media.geometry.type) {
-                     case 'Polygon':
-                       const polygonPath = media.geometry.coordinates[0].map(coord => ({ lat: coord[1], lng: coord[0] }));
-                       return <Polygon key={media.id} paths={[polygonPath]} options={{ fillColor: displayColor, strokeColor: displayColor, fillOpacity: 0.5, strokeWeight: 2 }} />;
-                     case 'Rectangle':
-                       if (media.geometry.coordinates && media.geometry.coordinates.length === 2) {
-                          const bounds = new window.google.maps.LatLngBounds(
-                             { lat: media.geometry.coordinates[0][1], lng: media.geometry.coordinates[0][0] },
-                             { lat: media.geometry.coordinates[1][1], lng: media.geometry.coordinates[1][0] }
-                          );
-                          return <Rectangle key={media.id} bounds={bounds} options={{ fillColor: displayColor, strokeColor: displayColor, fillOpacity: 0.5, strokeWeight: 2 }} />;
-                       } else {
-                         console.error('Unexpected rectangle coordinates format:', media.geometry.coordinates);
-                         return null;
-                       }
-                     case 'Circle':
-                       if (media.geometry.coordinates && media.geometry.coordinates.length === 1 && media.geometry.radius !== undefined) {
-                           const center = { lat: media.geometry.coordinates[0][1], lng: media.geometry.coordinates[0][0] };
-                           return <Circle key={media.id} center={center} radius={media.geometry.radius} options={{ fillColor: displayColor, strokeColor: displayColor, fillOpacity: 0.5, strokeWeight: 2 }} />;
-                       } else {
-                          console.error('Unexpected circle coordinates/radius format:', media.geometry);
-                          return null;
-                       }
-                     default:
-                       return null;
-                   }
-                 })}
-               </GoogleMap>
+               <MediaMap 
+                 mediaData={filteredMedia} 
+                 setMapCenter={setMapCenter}
+                 zoom={mapZoom}
+               />
              )}
            </div>
         ) : (
@@ -192,8 +248,8 @@ function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, map
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {mappedMedia && mappedMedia.length > 0 ? (
-                  mappedMedia.map((media, index) => (
+                {filteredMedia && filteredMedia.length > 0 ? (
+                  filteredMedia.map((media, index) => (
                     <tr 
                       key={media.id} 
                       className="cursor-pointer hover:bg-gray-100"
@@ -231,22 +287,24 @@ function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, map
           </div>
         )}
       </motion.div>
-    </div>
+    </>
   );
 }
 
-function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScriptLoadError }) {
+function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScriptLoadError, mediaList }) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(initialData || {});
   const [plantingFormat, setPlantingFormat] = useState(initialData?.planting_format || initialData?.Planting_format || '');
   const [areaGeometry, setAreaGeometry] = useState(null);
   const [drawingManager, setDrawingManager] = useState(null);
-  const [selectedDrawingMode, setSelectedDrawingMode] = useState(null);
   const [selectedAreaType, setSelectedAreaType] = useState(initialData?.locationType || 'Lahan');
   const [pricePerM2, setPricePerM2] = useState(initialData?.price_per_m2 || initialData?.Price_per_m2 || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [drawnOverlay, setDrawnOverlay] = useState(null);
+  const [isPolygonEditable, setIsPolygonEditable] = useState(false);
+  const [mapInstance, setMapInstance] = useState(null);
+  const [polygonInstance, setPolygonInstance] = useState(null);
+  const [drawingKey, setDrawingKey] = useState(0);
 
   const formatArea = (area) => {
     if (!area) return '';
@@ -428,40 +486,29 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
     }
   };
 
-   const handleAreaComplete = (event) => {
+  const handleAreaComplete = (event) => {
     const shape = event.overlay;
-
-    // Clear previous shape if any
-    if (drawnOverlay) {
-        drawnOverlay.setMap(null);
-    }
-
-    // Store the new drawn shape (overlay object)
-    setDrawnOverlay(shape);
-
-    // Extract coordinates based on shape type
     let geometry = null;
     let areaSize = 0;
 
+    // Hapus overlay lama jika ada
+    if (polygonInstance) {
+      polygonInstance.setMap(null);
+      setPolygonInstance(null);
+    }
+
+    if (drawingManager) {
+      drawingManager.setDrawingMode(null);
+      drawingManager.setOptions({ drawingControl: false });
+    }
+
     if (shape instanceof window.google.maps.Polygon) {
+      setPolygonInstance(shape);
       const path = shape.getPath().getArray().map(latLng => [latLng.lng(), latLng.lat()]);
       geometry = { type: 'Polygon', coordinates: [path] };
       if (window.google.maps.geometry) {
-         areaSize = window.google.maps.geometry.spherical.computeArea(shape.getPath());
+        areaSize = window.google.maps.geometry.spherical.computeArea(shape.getPath());
       }
-    } else if (shape instanceof window.google.maps.Rectangle) {
-       const bounds = shape.getBounds();
-       const ne = bounds.getNorthEast();
-       const sw = bounds.getSouthWest();
-       geometry = { type: 'Rectangle', coordinates: [[sw.lng(), sw.lat()], [ne.lng(), ne.lat()]] };
-       if (window.google.maps.geometry) {
-           areaSize = window.google.maps.geometry.spherical.computeArea(shape.getBounds());
-       }
-    } else if (shape instanceof window.google.maps.Circle) {
-       const center = shape.getCenter();
-       const radius = shape.getRadius();
-       geometry = { type: 'Circle', coordinates: [center.lng(), center.lat()], radius: radius };
-        areaSize = Math.PI * Math.pow(radius, 2);
     }
 
     if (geometry) {
@@ -473,64 +520,43 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
         locationType: selectedAreaType,
         estimatedLandValue: estimated,
       }));
-
-      // Disable drawing mode after area is drawn
-      if (drawingManager) {
-        drawingManager.setDrawingMode(null);
-        setSelectedDrawingMode(null);
-      }
+      setIsPolygonEditable(true);
     }
+
+    // Hapus overlay dari map (prevent double render)
+    shape.setMap(null);
   };
 
-   const handleDrawingModeChange = (mode) => {
-     if (drawingManager && !areaGeometry) { // Only allow drawing if no area exists
-      // Reset previous mode if any
-      if (selectedDrawingMode) {
-        drawingManager.setDrawingMode(null);
-      }
-      
-      // Set new mode
-      drawingManager.setDrawingMode(window.google.maps.drawing.OverlayType[mode.toUpperCase()]);
-      setSelectedDrawingMode(mode);
-      
-      // Show instruction based on mode
-      let instruction = '';
-      switch(mode) {
-        case 'POLYGON':
-          instruction = 'Klik pada peta untuk membuat titik-titik poligon. Klik titik pertama untuk menutup poligon.';
-          break;
-        case 'RECTANGLE':
-          instruction = 'Klik dan seret untuk membuat persegi panjang.';
-          break;
-        case 'CIRCLE':
-          instruction = 'Klik pada peta untuk menentukan pusat lingkaran, lalu seret untuk menentukan radius.';
-          break;
-      }
-      if (instruction) {
-        alert(instruction);
-      }
+  const handleResetArea = () => {
+    // Hapus overlay instance
+    if (polygonInstance) {
+      polygonInstance.setMap(null);
+      setPolygonInstance(null);
     }
-   };
+    if (drawingManager) {
+      drawingManager.setDrawingMode(null);
+      drawingManager.setOptions({ drawingControl: true });
+    }
+    setAreaGeometry(null);
+    setForm(f => ({ 
+      ...f, 
+      areaSize: 0,
+      estimatedLandValue: 0
+    }));
+    setDrawingKey(prev => prev + 1);
+    setDrawingManager(null);
+  };
 
-   const handleResetArea = () => {
-      // Remove the drawn overlay from the map
-      if (drawnOverlay) {
-          drawnOverlay.setMap(null);
+  const handleAreaTypeChange = (type) => {
+      // Reset area if already drawn
+      if (areaGeometry) {
+        setAreaGeometry(null);
+        setForm(f => ({ 
+          ...f, 
+          areaSize: 0,
+          estimatedLandValue: 0
+        }));
       }
-      setDrawnOverlay(null);
-
-      // Reset geometry and form data
-      setAreaGeometry(null);
-      setForm(f => ({ ...f, areaSize: 0 }));
-
-      // Reset drawing manager mode
-       if (drawingManager) {
-         drawingManager.setDrawingMode(null);
-         setSelectedDrawingMode(null);
-       }
-   };
-
-   const handleAreaTypeChange = (type) => {
       setSelectedAreaType(type);
       // Update drawing manager options with new color if it exists
       if (drawingManager) {
@@ -542,7 +568,8 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
             fillOpacity: 0.5,
             strokeWeight: 2,
             clickable: true,
-            editable: true,
+            editable: false,
+            draggable: false,
             zIndex: 1
           },
           rectangleOptions: {
@@ -551,7 +578,8 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
             fillOpacity: 0.5,
             strokeWeight: 2,
             clickable: true,
-            editable: true,
+            editable: false,
+            draggable: false,
             zIndex: 1
           },
           circleOptions: {
@@ -560,7 +588,8 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
             fillOpacity: 0.5,
             strokeWeight: 2,
             clickable: true,
-            editable: true,
+            editable: false,
+            draggable: false,
             zIndex: 1
           }
         });
@@ -590,6 +619,11 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
       setIsSubmitting(false);
       return;
     }
+
+    // Log geometry data before sending
+    console.log("Area geometry before sending:", areaGeometry);
+    console.log("Geometry type:", areaGeometry.type);
+    console.log("Geometry coordinates:", areaGeometry.coordinates);
 
     if (!pricePerM2) {
       setError('Harga per meter persegi harus diisi');
@@ -683,6 +717,79 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
     }
   };
 
+  // Helper untuk konversi geometry ke path/props Google Maps
+  const getPolygonPath = (geometry) => geometry?.coordinates?.[0]?.map(coord => ({ lat: coord[1], lng: coord[0] })) || [];
+  const getRectangleBounds = (geometry) => {
+    if (!geometry?.coordinates) return null;
+    const [sw, ne] = geometry.coordinates;
+    return {
+      south: sw[1],
+      west: sw[0],
+      north: ne[1],
+      east: ne[0],
+    };
+  };
+  const getCircleProps = (geometry) => {
+    if (!geometry?.coordinates) return null;
+    return {
+      center: { lat: geometry.coordinates[1], lng: geometry.coordinates[0] },
+      radius: geometry.radius,
+    };
+  };
+
+  // Handler untuk update geometry saat overlay diedit
+  const handlePolygonEdit = () => {
+    if (!polygonInstance) return;
+    const path = polygonInstance.getPath().getArray().map(latLng => [latLng.lng(), latLng.lat()]);
+    const geometry = { type: 'Polygon', coordinates: [path] };
+    setAreaGeometry(geometry);
+    if (window.google?.maps?.geometry) {
+      const areaSize = window.google.maps.geometry.spherical.computeArea(polygonInstance.getPath());
+      setForm(f => ({ ...f, areaSize: Math.round(areaSize) }));
+    }
+  };
+
+  const handleDrawingModeChange = (mode) => {
+    if (drawingManager) {
+      // Update warna sesuai tipe area
+      const color = AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981';
+      drawingManager.setOptions({
+        polygonOptions: {
+          fillColor: color,
+          strokeColor: color,
+          fillOpacity: 0.35,
+          strokeWeight: 2,
+          clickable: true,
+          editable: false,
+          draggable: false,
+          zIndex: 1
+        },
+        rectangleOptions: {
+          fillColor: color,
+          strokeColor: color,
+          fillOpacity: 0.35,
+          strokeWeight: 2,
+          clickable: true,
+          editable: false,
+          draggable: false,
+          zIndex: 1
+        },
+        circleOptions: {
+          fillColor: color,
+          strokeColor: color,
+          fillOpacity: 0.35,
+          strokeWeight: 2,
+          clickable: true,
+          editable: false,
+          draggable: false,
+          zIndex: 1
+        }
+      });
+      // Set mode gambar
+      drawingManager.setDrawingMode(window.google.maps.drawing.OverlayType[mode.toUpperCase()]);
+    }
+  };
+
   const renderStepContent = () => {
     switch (step) {
       case 1:
@@ -697,155 +804,94 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
                 </span>
               )}
             </p>
-
-            {/* Kontrol Area - Reorganized and styled */}
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                <div className="grid gap-2 flex-grow">
-                   <label htmlFor="areaType">Tipe Area</label>
-                   <select
-                       id="areaType"
-                       value={selectedAreaType}
-                       onChange={e => handleAreaTypeChange(e.target.value)}
-                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                   >
-                       {AREA_TYPE_OPTIONS.map(option => (
-                          <option key={option.value} value={option.value}>{option.label}</option>
-                       ))}
-                   </select>
-                </div>
-
-                {/* Group drawing buttons */}          
-                <div className="flex gap-2">
-                   <Button 
-                      variant={selectedDrawingMode === 'polygon' ? 'default' : 'outline'}
-                      onClick={() => {
-                        if (areaGeometry) {
-                          alert('Area sudah digambar. Silakan reset area terlebih dahulu jika ingin menggambar ulang.');
-                          return;
-                        }
-                        handleDrawingModeChange('polygon');
-                      }}
-                      className={`w-full sm:w-auto ${selectedDrawingMode === 'polygon' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-                      disabled={!!areaGeometry}
-                   >
-                     Gambar Polygon
-                   </Button>
-                    <Button 
-                      variant={selectedDrawingMode === 'rectangle' ? 'default' : 'outline'}
-                      onClick={() => {
-                        if (areaGeometry) {
-                          alert('Area sudah digambar. Silakan reset area terlebih dahulu jika ingin menggambar ulang.');
-                          return;
-                        }
-                        handleDrawingModeChange('rectangle');
-                      }}
-                      className={`w-full sm:w-auto ${selectedDrawingMode === 'rectangle' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-                      disabled={!!areaGeometry}
-                   >
-                     Gambar Kotak
-                   </Button>
-                    <Button 
-                      variant={selectedDrawingMode === 'circle' ? 'default' : 'outline'}
-                      onClick={() => {
-                        if (areaGeometry) {
-                          alert('Area sudah digambar. Silakan reset area terlebih dahulu jika ingin menggambar ulang.');
-                          return;
-                        }
-                        handleDrawingModeChange('circle');
-                      }}
-                      className={`w-full sm:w-auto ${selectedDrawingMode === 'circle' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-                      disabled={!!areaGeometry}
-                   >
-                     Gambar Lingkaran
-                   </Button>
-                </div>
-
-                 <Button 
-                   variant="outline"
-                   onClick={handleResetArea}
-                   className="w-full sm:w-auto text-red-600 border-red-300 hover:bg-red-50"
-                   disabled={!areaGeometry} // Disable if no area is drawn
-                 >
-                   Reset Area
-                 </Button>
+            {/* Kontrol Area */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col justify-end h-full">
+                <label htmlFor="areaType" className="text-sm font-medium text-gray-700 mb-1">Tipe Area</label>
+                <select
+                  id="areaType"
+                  value={selectedAreaType}
+                  onChange={e => handleAreaTypeChange(e.target.value)}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-sm"
+                  style={{height: '42px'}}
+                >
+                  {AREA_TYPE_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-end h-full">
+                <Button
+                  variant="outline"
+                  onClick={handleResetArea}
+                  className="block w-full px-3 py-2 border border-red-300 text-red-600 bg-white hover:bg-red-50 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 sm:text-sm text-sm"
+                  disabled={!areaGeometry}
+                  style={{height: '42px'}}
+                >
+                  Reset Area
+                </Button>
+              </div>
             </div>
-
-            <div className="rounded-lg overflow-hidden border h-[400px] sm:h-[500px] relative">
-               {mapScriptLoadError && (
-               <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-800 z-10">
-                 Error loading Google Maps: {mapScriptLoadError.message}
-               </div>
-             )}
-             {!isMapScriptLoaded && !mapScriptLoadError && (
+            {/* Ganti MediaMap dengan GoogleMap langsung */}
+            <div className="rounded-lg overflow-hidden border h-[400px] sm:h-[600px] relative">
+              {mapScriptLoadError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-800 z-10">
+                  Error loading Google Maps: {mapScriptLoadError.message}
+                </div>
+              )}
+              {!isMapScriptLoaded && !mapScriptLoadError && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
                   <p className="ml-4">Loading Map...</p>
                 </div>
-             )}
-             {isMapScriptLoaded && !mapScriptLoadError && (
+              )}
+              {isMapScriptLoaded && !mapScriptLoadError && (
                 <GoogleMap
-                  mapContainerStyle={{
-                    width: '100%',
-                    height: '100%',
-                  }}
-                  center={{ lat: -7.4355904, lng: 112.7164527 }}
+                  mapContainerStyle={{ width: '100%', height: '100%' }}
+                  center={areaGeometry ? (areaGeometry.type === 'Polygon' ? getPolygonPath(areaGeometry)[0] : areaGeometry.type === 'Rectangle' ? { lat: getRectangleBounds(areaGeometry).south, lng: getRectangleBounds(areaGeometry).west } : areaGeometry.type === 'Circle' ? getCircleProps(areaGeometry).center : { lat: -6.6459, lng: 107.6857 }) : { lat: -6.6459, lng: 107.6857 }}
                   zoom={17}
-                  onLoad={map => {
-                    const color = AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981';
-                    const drawingManager = new window.google.maps.drawing.DrawingManager({
-                      drawingMode: null,
-                      drawingControl: false,
-                      polygonOptions: {
-                        fillColor: color,
-                        strokeColor: color,
-                        fillOpacity: 0.5,
-                        strokeWeight: 2,
-                        clickable: true,
-                        editable: true,
-                        zIndex: 1
-                      },
-                      rectangleOptions: {
-                        fillColor: color,
-                        strokeColor: color,
-                        fillOpacity: 0.5,
-                        strokeWeight: 2,
-                        clickable: true,
-                        editable: true,
-                        zIndex: 1
-                      },
-                      circleOptions: {
-                        fillColor: color,
-                        strokeColor: color,
-                        fillOpacity: 0.5,
-                        strokeWeight: 2,
-                        clickable: true,
-                        editable: true,
-                        zIndex: 1
-                      }
-                    });
-                    drawingManager.setMap(map);
-                    setDrawingManager(drawingManager);
-
-                    window.google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
-                      handleAreaComplete(event);
-                    });
-                  }}
-                  onUnmount={() => {
-                     if (drawingManager) {
-                        drawingManager.setMap(null);
-                     }
-                  }}
-                   options={{
-                     mapTypeId: 'satellite', // Set to satellite view to show land
-                     streetViewControl: false,
-                     fullscreenControl: false,
-                     mapTypeControl: true,
-                     zoomControl: true,
-                   }}
+                  onLoad={setMapInstance}
+                  options={{ mapTypeId: 'satellite', mapTypeControl: false, streetViewControl: false, fullscreenControl: false }}
                 >
-                   {/* Render the drawn geometry if exists, for editing */}
-                   {/* We will now render the drawnOverlay object directly if it exists */}
-                   {/* Bentuk akan otomatis tetap di peta karena tidak dihapus di handleAreaComplete */}
+                  {/* Render overlay editable jika areaGeometry ada */}
+                  {!areaGeometry && drawingManager && (
+                    drawingManager.setDrawingMode(window.google.maps.drawing.OverlayType.POLYGON)
+                  )}
+                  {areaGeometry && areaGeometry.type === 'Polygon' && (
+                    <Polygon
+                      paths={getPolygonPath(areaGeometry)}
+                      options={{
+                        editable: true,
+                        draggable: false,
+                        fillColor: AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981',
+                        strokeColor: AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981',
+                        fillOpacity: 0.35,
+                        strokeWeight: 2
+                      }}
+                      onLoad={poly => setPolygonInstance(poly)}
+                      onMouseUp={handlePolygonEdit}
+                      onDragEnd={handlePolygonEdit}
+                    />
+                  )}
+                  {!areaGeometry && (
+                    <DrawingManager
+                      key={drawingKey}
+                      onLoad={dm => setDrawingManager(dm)}
+                      onOverlayComplete={handleAreaComplete}
+                      options={{
+                        drawingControl: false,
+                        drawingModes: ['polygon'],
+                        polygonOptions: {
+                          editable: true,
+                          draggable: false,
+                          fillColor: AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981',
+                          strokeColor: AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981',
+                          fillOpacity: 0.35,
+                          strokeWeight: 2
+                        }
+                      }}
+                    />
+                  )}
                 </GoogleMap>
               )}
             </div>
@@ -1057,28 +1103,26 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
                </div>
              )}
 
-             {/* Harga per meter persegi and Estimasi Nilai Lahan - Always visible when not Gudang */}
-             {!hidePlantingFormat && (
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                     <label className="block text-sm font-medium text-gray-700">Harga per meter persegi</label>
-                     <Input
-                        type="number"
-                        value={pricePerM2 || ''}
-                        onChange={(e) => setPricePerM2(e.target.valueAsNumber || '')}
-                        placeholder="Contoh: 100000"
-                     />
-                  </div>
-                  <div>
-                     <label className="block text-sm font-medium text-gray-700">Estimasi Nilai Lahan</label>
-                     <Input
-                        type="text"
-                        value={form.estimatedLandValue ? `Rp. ${form.estimatedLandValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}` : ''}
-                        disabled
-                     />
-                  </div>
-               </div>
-             )}
+             {/* Harga per meter persegi and Estimasi Nilai Lahan - Always visible */}
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div>
+                   <label className="block text-sm font-medium text-gray-700">Harga per meter persegi</label>
+                   <Input
+                      type="number"
+                      value={pricePerM2 || ''}
+                      onChange={(e) => setPricePerM2(e.target.valueAsNumber || '')}
+                      placeholder="Contoh: 100000"
+                   />
+                </div>
+                <div>
+                   <label className="block text-sm font-medium text-gray-700">Estimasi Nilai Lahan</label>
+                   <Input
+                      type="text"
+                      value={form.estimatedLandValue ? `Rp. ${form.estimatedLandValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}` : ''}
+                      disabled
+                   />
+                </div>
+             </div>
 
           </div>
         );
@@ -1142,6 +1186,51 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
     }
   };
 
+  // Update drawing color when selectedAreaType changes
+  useEffect(() => {
+    if (drawingManager) {
+      const color = AREA_TYPE_OPTIONS.find(opt => opt.value === selectedAreaType)?.color || '#10b981';
+      drawingManager.setOptions({
+        polygonOptions: {
+          fillColor: color,
+          strokeColor: color,
+          fillOpacity: 0.35,
+          strokeWeight: 2,
+          clickable: true,
+          editable: false,
+          draggable: false,
+          zIndex: 1
+        },
+        rectangleOptions: {
+          fillColor: color,
+          strokeColor: color,
+          fillOpacity: 0.35,
+          strokeWeight: 2,
+          clickable: true,
+          editable: false,
+          draggable: false,
+          zIndex: 1
+        },
+        circleOptions: {
+          fillColor: color,
+          strokeColor: color,
+          fillOpacity: 0.35,
+          strokeWeight: 2,
+          clickable: true,
+          editable: false,
+          draggable: false,
+          zIndex: 1
+        }
+      });
+    }
+  }, [selectedAreaType, drawingManager]);
+
+  useEffect(() => {
+    return () => {
+      setDrawingManager(null);
+    };
+  }, []);
+
   return (
     <div className="p-4 sm:p-8">
        <div className="flex items-center gap-4 mb-6">
@@ -1196,9 +1285,8 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
               {step < 3 && (
                 <Button 
                   type="button" 
-                  variant="default" 
                   onClick={handleNext} 
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
                   disabled={isSubmitting}
                 >
                   Berikutnya
@@ -1207,8 +1295,7 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
               {step === 3 && (
                 <Button 
                   type="submit" 
-                  variant="default" 
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Menyimpan...' : 'Simpan'}
@@ -1230,6 +1317,7 @@ export default function MediaManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
+  const [mapCenter, setMapCenter] = useState(null);
 
   // Load Google Maps script once
   const { isLoaded: isMapScriptLoaded, loadError: mapScriptLoadError } = useLoadScript({
@@ -1277,7 +1365,26 @@ export default function MediaManagement() {
       }
 
       const data = await res.json();
-      console.log("Received data:", data);
+      // Parse geometry if still string
+      data.forEach(media => {
+        if (typeof media.geometry === 'string') {
+          try {
+            media.geometry = JSON.parse(media.geometry);
+          } catch (e) {
+            media.geometry = null;
+          }
+        }
+      });
+      // Add detailed geometry logging
+      data.forEach((media, index) => {
+        console.log(`Media ${index + 1} geometry:`, {
+          id: media.id,
+          name: media.name,
+          geometry: media.geometry,
+          geometryType: media.geometry?.type,
+          coordinates: media.geometry?.coordinates
+        });
+      });
       if (!Array.isArray(data)) {
         console.error("Invalid data format:", data);
         throw new Error('Invalid data format received from server');
@@ -1385,6 +1492,7 @@ export default function MediaManagement() {
         initialData={selectedMedia}
         isMapScriptLoaded={isMapScriptLoaded}
         mapScriptLoadError={mapScriptLoadError}
+        mediaList={mediaList}
       />
     );
   }
@@ -1420,20 +1528,6 @@ export default function MediaManagement() {
   return (
     <div className="space-y-4 overflow-y-auto">
       <PageHeader title="Manajemen Media" />
-      {/* Breadcrumb */}
-      <nav className="text-sm mb-4" aria-label="Breadcrumb">
-        <ol className="list-none p-0 inline-flex space-x-2">
-          <li className="flex items-center">
-            <span className="text-gray-500 hover:text-gray-700">Crop Production</span>
-          </li>
-          <li>
-            <span className="text-gray-400">/</span>
-          </li>
-          <li className="flex items-center">
-            <span className="text-gray-700 font-medium">Media Management</span>
-          </li>
-        </ol>
-      </nav>
       <div className="container mx-auto p-4 md:p-8 pt-24 md:pt-20">
         <TabelMedia
           onAdd={() => setShowForm(true)}
@@ -1442,8 +1536,9 @@ export default function MediaManagement() {
           onDelete={handleDelete}
           isMapScriptLoaded={isMapScriptLoaded}
           mapScriptLoadError={mapScriptLoadError}
+          setMapCenter={setMapCenter}
         />
       </div>
     </div>
   );
-} 
+}

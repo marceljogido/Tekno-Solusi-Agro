@@ -293,34 +293,28 @@ export default function MyCrop() {
   return (
     <div className="space-y-4 overflow-y-auto">
       <PageHeader title="My Crop" />
-
-      {/* Breadcrumb */}
-      <nav className="text-sm mb-4" aria-label="Breadcrumb">
-        <ol className="list-none p-0 inline-flex space-x-2">
-          <li className="flex items-center">
-            <span className="text-gray-500 hover:text-gray-700">Crop Production</span>
-          </li>
-          <li>
-            <span className="text-gray-400">/</span>
-          </li>
-          <li className="flex items-center">
-            <span className="text-gray-700 font-medium">My Crops</span>
-          </li>
-        </ol>
-      </nav>
-
       <div className="container mx-auto p-4 md:p-8 pt-24 md:pt-20">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <h1 className="text-2xl font-bold">My Crop</h1>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleOpenForm}
-            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center shadow-lg"
+        <nav className="text-sm mb-4" aria-label="Breadcrumb">
+          <ol className="list-none p-0 inline-flex space-x-2">
+            <li className="flex items-center">
+              <span className="text-gray-500 hover:text-gray-700">Crop Production</span>
+            </li>
+            <li>
+              <span className="text-gray-400">/</span>
+            </li>
+            <li className="flex items-center">
+              <span className="text-gray-700 font-medium">My Crop</span>
+            </li>
+          </ol>
+        </nav>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">My Crop</h1>
+          <button
+            onClick={() => setIsFormOpen(true)}
+            className="w-full md:w-auto bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
           >
-            <FaPlus className="mr-2" />
-            Tambah Tanaman
-          </motion.button>
+            Tambah Tanaman Baru
+          </button>
         </div>
 
         <div className="bg-white shadow-lg rounded-lg p-6">
@@ -434,7 +428,7 @@ export default function MyCrop() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+              className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50 p-4"
             >
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}

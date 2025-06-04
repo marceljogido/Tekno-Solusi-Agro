@@ -44,7 +44,10 @@ export async function GET() {
         updatedBy: plantings.updatedBy,
         crop: {
           name: crops.name,
-          variety: crops.variety
+          variety: crops.variety,
+          daysToFlower: crops.daysToFlower,
+          daysToMaturity: crops.daysToMaturity,
+          harvestWindow: crops.harvestWindow
         },
         location: {
           name: mediaLocations.name,

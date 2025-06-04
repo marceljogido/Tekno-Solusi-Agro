@@ -4,6 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AddNewPlanForm from '@/components/crop-production/AddNewPlanForm';
 import PageHeader from '@/components/layout/PageHeader';
+import dynamic from 'next/dynamic';
+import { useLoadScript } from "@react-google-maps/api";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from 'recharts';
+
+const MediaMap = dynamic(() => import('@/components/maps/MediaMap'), { ssr: false });
 
 export default function CropPlanningDetailPage({ params }) {
   const { cropId } = params;
@@ -14,6 +19,11 @@ export default function CropPlanningDetailPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+    libraries: ["drawing", "geometry"],
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,6 +41,17 @@ export default function CropPlanningDetailPage({ params }) {
         const cropData = await cropRes.json();
         const plantingsData = await plantingsRes.json();
         const locationsData = await locationsRes.json();
+
+        // Parse geometry jika masih string
+        locationsData.forEach(loc => {
+          if (typeof loc.geometry === 'string') {
+            try {
+              loc.geometry = JSON.parse(loc.geometry);
+            } catch (e) {
+              loc.geometry = null;
+            }
+          }
+        });
 
         setCrop(cropData);
         setPlantings(plantingsData);
@@ -89,6 +110,34 @@ export default function CropPlanningDetailPage({ params }) {
     return `${formattedNumber} m²`;
   };
 
+  // Siapkan mediaData untuk MediaMap
+  const mediaDataForMap = locations.filter(loc => plantings.some(p => p.locationId === loc.id && loc.geometry && loc.geometry.type && loc.geometry.coordinates));
+  console.log('mediaData for MediaMap:', mediaDataForMap);
+
+  // Fungsi bantu untuk group by bulan dan jumlahkan yield
+  function getHarvestData(plantings) {
+    // Map: { '2025-06': totalYield }
+    const monthMap = {};
+    plantings.forEach(p => {
+      if (p.harvestPlan && p.estimatedYield) {
+        const date = new Date(p.harvestPlan);
+        const month = date.toLocaleString('default', { month: 'short' });
+        const year = date.getFullYear();
+        const key = `${month} ${year}`;
+        if (!monthMap[key]) monthMap[key] = 0;
+        monthMap[key] += Number(p.estimatedYield);
+      }
+    });
+    // Convert to array sorted by date
+    return Object.entries(monthMap).map(([month, yieldVal]) => ({ month, yield: yieldVal })).sort((a, b) => {
+      // Sort by year then month
+      const [ma, ya] = a.month.split(' ');
+      const [mb, yb] = b.month.split(' ');
+      if (ya !== yb) return Number(ya) - Number(yb);
+      return new Date(`${ma} 1, 2000`) - new Date(`${mb} 1, 2000`);
+    });
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto p-4 md:p-8">
@@ -124,6 +173,83 @@ export default function CropPlanningDetailPage({ params }) {
       <PageHeader title="Detail Rencana Tanam" />
       
       <div className="container mx-auto p-4 md:p-8 space-y-6 pt-24 md:pt-20">
+        {/* DASHBOARD SUMMARY START */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Maps */}
+          <div className="bg-white rounded-2xl shadow p-0 overflow-hidden flex flex-col relative">
+            <div className="p-4 pb-0 font-semibold text-gray-700">{plantings.length} Location Planted</div>
+            <div className="w-full h-64 relative">
+              {!isLoaded ? (
+                <div className="flex items-center justify-center w-full h-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                  <span className="ml-2 text-gray-400">Loading Map...</span>
+                </div>
+              ) : loadError ? (
+                <div className="text-red-500">Failed to load map</div>
+              ) : (
+                <MediaMap 
+                  mediaData={mediaDataForMap}
+                />
+              )}
+              {/* Fullscreen button */}
+              <button className="absolute bottom-3 right-3 bg-white shadow rounded-full p-2 hover:bg-gray-100 transition z-10" title="Fullscreen">
+                <svg width="20" height="20" fill="none"><rect x="3" y="3" width="14" height="14" rx="3" stroke="#888" strokeWidth="2"/><path d="M7 7h2v2H7V7zm4 4h2v2h-2v-2z" fill="#888"/></svg>
+              </button>
+            </div>
+          </div>
+          {/* Harvest */}
+          <div className="bg-white rounded-2xl shadow p-0 flex flex-col">
+            <div className="p-4 pb-0">
+              <div className="font-semibold text-gray-700">Harvest</div>
+              <div className="text-xs text-gray-400">Yield bales (%)</div>
+            </div>
+            <div className="w-full h-48 flex items-center">
+              <ResponsiveContainer width="100%" height={140}>
+                <AreaChart data={getHarvestData(plantings)}>
+                  <XAxis dataKey="month" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} width={40} />
+                  <Tooltip />
+                  <Area
+                    type="monotone"
+                    dataKey="yield"
+                    stroke="#4ade80"
+                    fill="#4ade80"
+                    fillOpacity={0.18}
+                    strokeWidth={2.5}
+                    activeDot={{ r: 5 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          {/* Summary */}
+          <div className="flex flex-col gap-4 h-full justify-center items-center">
+            <div className="bg-white rounded-2xl shadow flex flex-col items-center justify-center p-6 w-full text-center">
+              <div className="text-xs text-gray-500">Total Land Area</div>
+              <div className="text-2xl font-bold text-gray-800 mt-1">{
+                plantings.reduce((sum, p) => {
+                  const loc = locations.find(l => l.id === p.locationId);
+                  return sum + (loc?.area ? Number(loc.area) : 0);
+                }, 0)
+              }sqm</div>
+              <div className="text-green-500 text-xs mt-1">100% Planted</div>
+              <div className="bg-green-100 text-green-600 rounded-full p-4 mt-4">
+                <svg width="24" height="24" fill="none"><rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" strokeWidth="2"/></svg>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl shadow flex flex-col items-center justify-center p-6 w-full text-center">
+              <div className="text-xs text-gray-500">Revenue</div>
+              <div className="text-2xl font-bold text-gray-800 mt-1">Rp. {
+                plantings.reduce((sum, p) => sum + (p.estimatedProfit ? Number(p.estimatedProfit) : 0), 0).toLocaleString('id-ID')
+              }</div>
+              <div className="text-green-500 text-xs mt-1">+12% from last month</div>
+              <div className="bg-yellow-100 text-yellow-600 rounded-full p-4 mt-4">
+                <svg width="24" height="24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><path d="M12 8v4l2 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* DASHBOARD SUMMARY END */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{crop.name}</h1>

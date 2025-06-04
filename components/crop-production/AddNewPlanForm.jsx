@@ -788,6 +788,18 @@ export default function AddNewPlanForm({ onClose, onSuccess, initialData }) {
     }
 
     try {
+      // Hitung ulang estimatedYield dan estimatedProfit sebelum submit
+      const jumlahTanam = Number(form.plantingQuantity);
+      const tingkatPerkecambahan = selectedCrop && selectedCrop.germinationRate ? Number(selectedCrop.germinationRate) : 100;
+      const tingkatKehilangan = selectedCrop && selectedCrop.lossRate ? Number(selectedCrop.lossRate) : 0;
+      const hasilPerTanaman = Number(rataRataHasil);
+      const hargaJual = selectedCrop && selectedCrop.estimatedRevenue ? Number(selectedCrop.estimatedRevenue) : 0;
+      const tanamanTumbuh = jumlahTanam * (tingkatPerkecambahan / 100);
+      const panenKotor = tanamanTumbuh * hasilPerTanaman;
+      const kehilangan = panenKotor * (tingkatKehilangan / 100);
+      const panenBersih = panenKotor - kehilangan;
+      const keuntungan = panenBersih * hargaJual;
+
       // Siapkan data untuk dikirim ke API
       const dataToSend = {
         crop_id: form.cropId,
@@ -803,8 +815,8 @@ export default function AddNewPlanForm({ onClose, onSuccess, initialData }) {
         electronicId: form.electronicId,
         currentlyPlanted: form.currentlyPlanted,
         harvestPlan: form.harvestPlan,
-        estimatedYield: Number(form.estimatedYield) || 0,
-        estimatedProfit: Number(perkiraanKeuntungan) || 0,
+        estimatedYield: panenBersih,
+        estimatedProfit: keuntungan,
         plantingInfo: form.plantingInfo,
         status: form.status || 'active',
         // field bedengan
@@ -888,6 +900,18 @@ export default function AddNewPlanForm({ onClose, onSuccess, initialData }) {
 
   // Perhitungan otomatis Perkiraan Jumlah Panen (kg) dan Perkiraan Hasil Keuntungan
   useEffect(() => {
+    // Jangan override saat edit (initialData ada)
+    if (initialData) return;
+
+    // Validasi field yang dibutuhkan
+    if (
+      !form.plantingQuantity ||
+      !selectedCrop ||
+      !rataRataHasil ||
+      isNaN(Number(form.plantingQuantity)) ||
+      isNaN(Number(rataRataHasil))
+    ) return;
+
     const jumlahTanam = Number(form.plantingQuantity);
     const tingkatPerkecambahan = selectedCrop && selectedCrop.germinationRate ? Number(selectedCrop.germinationRate) : 100;
     const tingkatKehilangan = selectedCrop && selectedCrop.lossRate ? Number(selectedCrop.lossRate) : 0;
@@ -905,16 +929,15 @@ export default function AddNewPlanForm({ onClose, onSuccess, initialData }) {
 
     setPerkiraanPanenBersih(panenBersih);
     setPerkiraanKeuntungan(panenBersih * hargaJual);
-    // Update form.estimatedYield with the calculated clean yield
     setForm(prev => ({
       ...prev,
       estimatedYield: panenBersih.toString() // Store as string for input value
     }));
 
-  }, [form.plantingQuantity, selectedCrop, rataRataHasil]);
+  }, [form.plantingQuantity, selectedCrop, rataRataHasil, initialData]);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
+    <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex justify-center items-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-xl font-semibold text-green-700">
@@ -1309,7 +1332,17 @@ export default function AddNewPlanForm({ onClose, onSuccess, initialData }) {
                 <label className="block mb-1">Perkiraan Jumlah Panen (kg)</label>
                 <Input
                   type="text"
-                  value={Math.round(perkiraanPanenBersih).toLocaleString('id-ID')}
+                  value={(() => {
+                    const jumlahTanam = Number(form.plantingQuantity);
+                    const tingkatPerkecambahan = selectedCrop && selectedCrop.germinationRate ? Number(selectedCrop.germinationRate) : 100;
+                    const tingkatKehilangan = selectedCrop && selectedCrop.lossRate ? Number(selectedCrop.lossRate) : 0;
+                    const hasilPerTanaman = Number(rataRataHasil);
+                    const tanamanTumbuh = jumlahTanam * (tingkatPerkecambahan / 100);
+                    const panenKotor = tanamanTumbuh * hasilPerTanaman;
+                    const kehilangan = panenKotor * (tingkatKehilangan / 100);
+                    const panenBersih = panenKotor - kehilangan;
+                    return Math.round(panenBersih).toLocaleString('id-ID');
+                  })()}
                   readOnly
                   className="bg-gray-100"
                 />
@@ -1319,7 +1352,19 @@ export default function AddNewPlanForm({ onClose, onSuccess, initialData }) {
                 <label className="block mb-1">Perkiraan Hasil Keuntungan (Rp)</label>
                 <Input
                   type="text"
-                  value={Math.round(perkiraanKeuntungan).toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 })}
+                  value={(() => {
+                    const jumlahTanam = Number(form.plantingQuantity);
+                    const tingkatPerkecambahan = selectedCrop && selectedCrop.germinationRate ? Number(selectedCrop.germinationRate) : 100;
+                    const tingkatKehilangan = selectedCrop && selectedCrop.lossRate ? Number(selectedCrop.lossRate) : 0;
+                    const hasilPerTanaman = Number(rataRataHasil);
+                    const hargaJual = selectedCrop && selectedCrop.estimatedRevenue ? Number(selectedCrop.estimatedRevenue) : 0;
+                    const tanamanTumbuh = jumlahTanam * (tingkatPerkecambahan / 100);
+                    const panenKotor = tanamanTumbuh * hasilPerTanaman;
+                    const kehilangan = panenKotor * (tingkatKehilangan / 100);
+                    const panenBersih = panenKotor - kehilangan;
+                    const keuntungan = panenBersih * hargaJual;
+                    return Math.round(keuntungan).toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+                  })()}
                   readOnly
                   className="bg-gray-100"
                 />

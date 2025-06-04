@@ -148,7 +148,7 @@ export default function NewCropForm({ onClose, onSave, initialData }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50"
+      className="fixed inset-0 bg-transparent flex justify-center items-center p-4 z-50"
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
@@ -287,16 +287,26 @@ export default function NewCropForm({ onClose, onSave, initialData }) {
               </div>
               <div>
                 <label htmlFor="harvestUnit" className="block text-sm font-medium text-gray-600 mb-1">Satuan Panen</label>
-                <select value={formData.harvestUnit} onChange={handleChange} id="harvestUnit" name="harvestUnit" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 bg-white">
+                <select value={formData.harvestUnit} onChange={handleChange} id="harvestUnit" name="harvestUnit" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-12">
                   {SATUAN_PANEN_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
               </div>
               <div>
                 <label htmlFor="estimatedRevenue" className="block text-sm font-medium text-gray-600 mb-1">Perkiraan Pendapatan</label>
-                <div className="flex items-center">
-                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">Rp.</span>
-                  <input value={formData.estimatedRevenue} onChange={handleChange} type="number" id="estimatedRevenue" name="estimatedRevenue" placeholder="1.000.000" className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none border border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500" />
-                  <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">per satuan panen</span>
+                <div className="flex items-center w-full min-w-0">
+                  <div className="relative flex-1 min-w-0">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-xs">Rp.</span>
+                    <input
+                      value={formData.estimatedRevenue}
+                      onChange={handleChange}
+                      type="number"
+                      id="estimatedRevenue"
+                      name="estimatedRevenue"
+                      placeholder="1.000.000"
+                      className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-2"
+                    />
+                  </div>
+                  <span className="ml-2 text-gray-500 text-xs whitespace-nowrap flex-shrink-0">per satuan panen</span>
                 </div>
               </div>
               <div>

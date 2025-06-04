@@ -25,7 +25,7 @@ export default function MainLayout({ children }) {
         </div>
 
         {/* Main Content */}
-        <main className="h-screen flex-1 overflow-y-auto bg-slate-50">
+        <main className="h-screen flex-1 overflow-y-auto">
           {children}
         </main>
       </div>
