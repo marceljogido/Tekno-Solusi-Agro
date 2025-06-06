@@ -49,5 +49,5 @@ export async function register(prevState, formData) {
     password: hashedPassword,
   });
 
-  redirect("/login");
+  redirect("/auth/login");
 }
