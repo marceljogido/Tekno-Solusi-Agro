@@ -462,7 +462,7 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
   ];
 
   const areaType = form.locationType || form.area?.type || selectedAreaType || '';
-  const hidePlantingFormat = areaType === 'Gudang'; // Assuming 'Gudang' means no planting format
+  const hidePlantingFormat = areaType === 'Gudang' || areaType === 'Irigasi'; // Updated condition to hide for both Gudang and Irigasi
 
   const parseNum = val => Number(String(val || '0').replace(',', '.'));
 
@@ -1065,18 +1065,18 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
              )}
 
              {/* Informasi Luas Area - Combined and simplified */}
-             {!hidePlantingFormat && (
-               <div className="border-t pt-4 mt-4">
+             <div className="border-t pt-4 mt-4">
                  <h3 className="text-sm font-medium text-gray-700 mb-4">Informasi Luas Area</h3>
-                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                   {/* Show calculated area unless planting format is 'baris' */}
-                   {plantingFormat !== 'baris' && (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                   {/* Show calculated area for all types except when planting format is 'baris' */}
+                   {(!hidePlantingFormat && plantingFormat !== 'baris') && (
                      <div>
                        <label className="block text-sm font-medium text-gray-700">Luas Area dari Perhitungan (m²)</label>
                        <Input
                          type="number"
                          value={form.luasArea || ''}
-                         disabled
+                         onChange={() => {}} // Empty handler for controlled component
+                         readOnly
                        />
                      </div>
                    )}
@@ -1085,7 +1085,12 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
                      <Input
                        type="number"
                        value={form.areaSize || ''}
-                       disabled={plantingFormat !== 'baris'}
+                       onChange={(e) => {
+                         if (!hidePlantingFormat && plantingFormat !== 'baris') {
+                           setForm(prev => ({ ...prev, areaSize: e.target.value }));
+                         }
+                       }}
+                       readOnly={!hidePlantingFormat && plantingFormat !== 'baris'}
                      />
                    </div>
                    {/* Add Luas Total Bedengan for bedengan format */}
@@ -1095,13 +1100,13 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
                        <Input
                          type="number"
                          value={form.luasTotalBedengan || ''}
-                         disabled
+                         onChange={() => {}} // Empty handler for controlled component
+                         readOnly
                        />
                      </div>
                    )}
                  </div>
                </div>
-             )}
 
              {/* Harga per meter persegi and Estimasi Nilai Lahan - Always visible */}
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
@@ -1119,7 +1124,8 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
                    <Input
                       type="text"
                       value={form.estimatedLandValue ? `Rp. ${form.estimatedLandValue.toLocaleString('id-ID', { maximumFractionDigits: 0 })}` : ''}
-                      disabled
+                      onChange={() => {}} // Empty handler for controlled component
+                      readOnly
                    />
                 </div>
              </div>
@@ -1316,7 +1322,6 @@ export default function MediaManagement() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const router = useRouter();
   const [mapCenter, setMapCenter] = useState(null);
 
   // Load Google Maps script once
@@ -1421,17 +1426,47 @@ export default function MediaManagement() {
         credentials: 'include'
       });
       
+      const data = await res.json();
+      
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Gagal menghapus media');
+        if (res.status === 401) {
+          router.push('/auth/login');
+          return;
+        }
+        
+        // Show error message to user
+        const errorMessage = data.error || 'Gagal menghapus media';
+        alert(errorMessage);
+        return;
       }
       
+      // Success - refresh the media list
       await fetchMedia();
-      alert('Media berhasil dihapus');
-    } catch (err) {
-      console.error('Error deleting media:', err);
-      setError(err.message);
-      alert('Gagal menghapus media: ' + err.message);
+      
+      // Show success notification
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-500 ease-in-out';
+      notification.textContent = 'Media berhasil dihapus!';
+      document.body.appendChild(notification);
+
+      // Animate in
+      setTimeout(() => {
+        notification.style.transform = 'translateY(0)';
+        notification.style.opacity = '1';
+      }, 100);
+
+      // Remove after 3 seconds
+      setTimeout(() => {
+        notification.style.transform = 'translateY(-100%)';
+        notification.style.opacity = '0';
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 500);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Error deleting media:', error);
+      alert('Terjadi kesalahan saat menghapus media. Silakan coba lagi.');
     } finally {
       setIsLoading(false);
     }

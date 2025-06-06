@@ -184,42 +184,54 @@ export async function DELETE(request, { params }) {
 
     const id = Number(params.id);
     if (isNaN(id)) {
-       return NextResponse.json({ error: "Invalid media location ID" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid media location ID" }, { status: 400 });
     }
 
-    // First, delete related planting plans
-    console.log(`Attempting to delete planting plans related to media location ID: ${id}`);
-    await db.delete(plantings).where(eq(plantings.locationId, id));
-    console.log("Related planting plans deleted.");
+    // Check if the media location exists and belongs to the user
+    const existingMedia = await db.query.mediaLocations.findFirst({
+      where: eq(mediaLocations.id, id)
+    });
 
-    // Then, delete the media location
-    console.log(`Attempting to delete media location ID: ${id}`);
+    if (!existingMedia) {
+      return NextResponse.json({ error: "Media location not found" }, { status: 404 });
+    }
+
+    if (existingMedia.createdBy !== user.id) {
+      return NextResponse.json({ error: "You are not authorized to delete this media location" }, { status: 403 });
+    }
+
+    // Check for related plantings
+    const relatedPlantings = await db.query.plantings.findMany({
+      where: eq(plantings.locationId, id)
+    });
+
+    if (relatedPlantings && relatedPlantings.length > 0) {
+      return NextResponse.json({ 
+        error: "Cannot delete media location because it has active plantings",
+        plantingsCount: relatedPlantings.length
+      }, { status: 400 });
+    }
+
+    // Delete the media location
     const deletedMediaLocation = await db
       .delete(mediaLocations)
-      .where(and(
-        eq(mediaLocations.id, id),
-        eq(mediaLocations.createdBy, user.id)
-      ))
+      .where(eq(mediaLocations.id, id))
       .returning();
-    console.log("Media location delete result:", deletedMediaLocation);
 
-    if (!deletedMediaLocation.length) {
-      // If length is 0, it might be not found or unauthorized
-      const existingCheck = await db.query.mediaLocations.findFirst({
-         where: eq(mediaLocations.id, id)
-      });
-
-      if (!existingCheck) {
-         return NextResponse.json({ error: "Media location not found" }, { status: 404 });
-      } else {
-         return NextResponse.json({ error: "You are not authorized to delete this media location" }, { status: 403 });
-      }
+    if (!deletedMediaLocation || deletedMediaLocation.length === 0) {
+      return NextResponse.json({ error: "Failed to delete media location" }, { status: 500 });
     }
 
-    return NextResponse.json({ message: "Media location and related planting plans deleted successfully" });
+    return NextResponse.json({ 
+      message: "Media location deleted successfully",
+      deletedMedia: deletedMediaLocation[0]
+    });
 
   } catch (error) {
-    console.error("Error deleting media location or related plantings:", error);
-    return NextResponse.json({ error: "Failed to delete media location" }, { status: 500 });
+    console.error("Error deleting media location:", error);
+    return NextResponse.json({ 
+      error: "Internal server error",
+      details: error.message 
+    }, { status: 500 });
   }
 } 

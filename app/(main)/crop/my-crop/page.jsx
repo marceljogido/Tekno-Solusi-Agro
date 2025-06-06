@@ -202,7 +202,7 @@ export default function MyCrop() {
     }
   };
 
-  const handleDeleteCrop = async (cropId) => {
+  const handleDeleteCrop = async (id) => {
     if (!window.confirm('Yakin ingin menghapus tanaman ini?')) {
       return;
     }
@@ -211,56 +211,56 @@ export default function MyCrop() {
     setError(null);
     
     try {
-      const res = await fetch(`/api/crops/${cropId}`, {
+      const res = await fetch(`/api/crops/${id}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include'
       });
       
+      const data = await res.json();
+      
       if (!res.ok) {
-        // Log the error response details
-        console.error('Delete failed:', res.status, res.statusText);
-
-        let errorText = 'Gagal menghapus tanaman';
-        try {
-          // Try reading as JSON first if Content-Type is application/json
-          const contentType = res.headers.get("content-type");
-          if (contentType && contentType.indexOf("application/json") !== -1) {
-             const errorData = await res.json();
-             console.error("Error response body (JSON):", errorData);
-             errorText = errorData.error || errorText;
-          } else {
-             // Otherwise, read as text
-             const rawErrorText = await res.text();
-             console.error("Error response body (text):", rawErrorText);
-             errorText = rawErrorText || errorText;
-          }
-        } catch (e) {
-           console.error("Error reading error response body:", e);
-           // Fallback to generic error message if reading fails
-           errorText = `Gagal menghapus tanaman: ${res.status} ${res.statusText || 'Error'}`;
-        }
-
         if (res.status === 401) {
           router.push('/auth/login');
           return;
         }
-        throw new Error(errorText);
+        
+        // Show error message to user
+        const errorMessage = data.error || 'Gagal menghapus tanaman';
+        alert(errorMessage);
+        return;
       }
       
-      // If response is OK, only try to read JSON if there is content and it's JSON
-      const contentType = res.headers.get("content-type");
-      if (res.status !== 204 && contentType && contentType.indexOf("application/json") !== -1) {
-        const data = await res.json();
-        console.log("Delete response:", data);
-      } else {
-        console.log("Delete successful or no content returned.");
-      }
+      // Success - refresh the crop list
+      await fetchCrops();
+      
+      // Show success notification
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-500 ease-in-out';
+      notification.textContent = 'Tanaman berhasil dihapus!';
+      document.body.appendChild(notification);
 
-      await fetchCrops(); // Refresh the list after successful deletion
-    } catch (err) {
-      console.error('Error deleting crop (client-side):', err);
-      setError(err.message);
-      alert(err.message);
+      // Animate in
+      setTimeout(() => {
+        notification.style.transform = 'translateY(0)';
+        notification.style.opacity = '1';
+      }, 100);
+
+      // Remove after 3 seconds
+      setTimeout(() => {
+        notification.style.transform = 'translateY(-100%)';
+        notification.style.opacity = '0';
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 500);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Error deleting crop:', error);
+      alert('Terjadi kesalahan saat menghapus tanaman. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }

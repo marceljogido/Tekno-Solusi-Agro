@@ -6,12 +6,12 @@ import AddNewPlanForm from '@/components/crop-production/AddNewPlanForm';
 import PageHeader from '@/components/layout/PageHeader';
 import dynamic from 'next/dynamic';
 import { useLoadScript } from "@react-google-maps/api";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, ScatterChart, Scatter } from 'recharts';
 
 const MediaMap = dynamic(() => import('@/components/maps/MediaMap'), { ssr: false });
 
 export default function CropPlanningDetailPage({ params }) {
-  const { cropId } = params;
+  const { cropId } = React.use ? React.use(params) : params;
   const router = useRouter();
   const [crop, setCrop] = useState(null);
   const [plantings, setPlantings] = useState([]);
@@ -198,28 +198,65 @@ export default function CropPlanningDetailPage({ params }) {
             </div>
           </div>
           {/* Harvest */}
-          <div className="bg-white rounded-2xl shadow p-0 flex flex-col">
-            <div className="p-4 pb-0">
-              <div className="font-semibold text-gray-700">Harvest</div>
-              <div className="text-xs text-gray-400">Yield bales (%)</div>
-            </div>
-            <div className="w-full h-48 flex items-center">
-              <ResponsiveContainer width="100%" height={140}>
-                <AreaChart data={getHarvestData(plantings)}>
-                  <XAxis dataKey="month" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} width={40} />
-                  <Tooltip />
-                  <Area
-                    type="monotone"
-                    dataKey="yield"
-                    stroke="#4ade80"
-                    fill="#4ade80"
-                    fillOpacity={0.18}
-                    strokeWidth={2.5}
-                    activeDot={{ r: 5 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+          <div className="bg-white rounded-2xl shadow-md p-4 flex flex-col">
+  {/* Header */}
+  <div className="mb-4">
+    <h2 className="text-lg font-semibold text-gray-800">Harvest</h2>
+    <p className="text-sm text-gray-500">Yield bales (%)</p>
+  </div>
+
+  {/* Chart Container */}
+  <div className="relative flex-1 min-h-[160px] flex items-center justify-center bg-gray-50 rounded-xl overflow-hidden">
+    {/* Line Chart */}
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart
+        data={[
+          { month: '', yield: 0 },
+          { month: '', yield: 0 }
+        ]}
+        margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+      >
+        <XAxis dataKey="month" hide />
+        <YAxis hide />
+        <Line
+          type="linear"
+          dataKey="yield"
+          stroke="#d1d5db"
+          strokeWidth={2}
+          dot={false}
+          activeDot={false}
+          isAnimationActive={false}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+
+            ```` {/* Empty Data Info */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="bg-white shadow rounded-lg px-4 py-3 text-center">
+                  <svg
+                    className="w-5 h-5 mx-auto mb-2 text-gray-400 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                  <p className="text-sm text-gray-600 font-medium leading-tight">
+                    Data belum tersedia.<br />Silakan lakukan panen terlebih dahulu.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
           {/* Summary */}
