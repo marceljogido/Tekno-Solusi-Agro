@@ -1,5 +1,17 @@
 {
-  "node": {},
+  "node": {
+    "6082c315aa3848e62e1b387090a88115ff36b77cdc": {
+      "workers": {
+        "app/auth/login/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22C%3A%5C%5CUsers%5C%5CLENOVO%5C%5CDocuments%5C%5Cmagang%5C%5CTani%5C%5Capp%5C%5Cauth%5C%5Clogin%5C%5Cactions.js%22%2C%5B%7B%22id%22%3A%226082c315aa3848e62e1b387090a88115ff36b77cdc%22%2C%22exportedName%22%3A%22login%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": true
+        }
+      },
+      "layer": {
+        "app/auth/login/page": "action-browser"
+      }
+    }
+  },
   "edge": {},
-  "encryptionKey": "vgIFEJOzXtSVgSS9A3XfNzPpWBaucNAkDBQmGY/Lho0="
+  "encryptionKey": "QvE3M4UGJzJnq3MIYH2/XBh2MsFTSUXza5HH5Hs7Xm0="
 }
