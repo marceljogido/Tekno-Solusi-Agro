@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 255, 255, 255;
+  --card-bg: 255, 255, 255;
+  --text-primary: 17, 24, 39;
+  --text-secondary: 107, 114, 128;
+  --border-color: 229, 231, 235;
+  --sidebar-bg: 249, 250, 251;
+}
+
+.dark {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 17, 24, 39;
+  --background-end-rgb: 17, 24, 39;
+  --card-bg: 31, 41, 55;
+  --text-primary: 243, 244, 246;
+  --text-secondary: 156, 163, 175;
+  --border-color: 55, 65, 81;
+  --sidebar-bg: 31, 41, 55;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+/* Dark mode specific styles */
+.dark .bg-white {
+  background-color: rgb(var(--card-bg));
+}
+
+.dark .text-gray-800 {
+  color: rgb(var(--text-primary));
+}
+
+.dark .text-gray-600 {
+  color: rgb(var(--text-secondary));
+}
+
+.dark .border-gray-200 {
+  border-color: rgb(var(--border-color));
+}
+
+/* Light mode specific styles */
+.light .bg-gray-800 {
+  background-color: rgb(var(--card-bg));
+}
+
+.light .text-white {
+  color: rgb(var(--text-primary));
+}
+
+/* Custom classes for consistent theming */
+.bg-card {
+  background-color: rgb(var(--card-bg));
+}
+
+.text-primary {
+  color: rgb(var(--text-primary));
+}
+
+.text-secondary {
+  color: rgb(var(--text-secondary));
+}
+
+.border-custom {
+  border-color: rgb(var(--border-color));
+}
+
+.bg-sidebar {
+  background-color: rgb(var(--sidebar-bg));
+}
