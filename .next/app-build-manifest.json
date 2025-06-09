@@ -26,6 +26,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/auth/login/page.js"
     ],
+    "/auth/register/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/auth/register/page.js"
+    ],
     "/(main)/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -35,11 +40,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(main)/dashboard/page.js"
-    ],
-    "/api/media_locations/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/media_locations/route.js"
     ],
     "/api/weather/route": [
       "static/chunks/webpack.js",
@@ -51,10 +51,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/dashboard/stats/route.js"
     ],
-    "/(main)/task/page": [
+    "/api/media_locations/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(main)/task/page.js"
+      "static/chunks/app/api/media_locations/route.js"
     ],
     "/(main)/crop/my-crop/page": [
       "static/chunks/webpack.js",
@@ -76,41 +76,41 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(main)/crop/media/page.js"
     ],
-    "/(main)/crop/crop-tracking/page": [
+    "/(main)/crop/crop-planning/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/(main)/crop/crop-tracking/page.css",
-      "static/chunks/app/(main)/crop/crop-tracking/page.js"
+      "static/chunks/app/(main)/crop/crop-planning/page.js"
     ],
     "/api/plantings/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/plantings/route.js"
     ],
+    "/(main)/crop/crop-tracking/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/(main)/crop/crop-tracking/page.css",
+      "static/chunks/app/(main)/crop/crop-tracking/page.js"
+    ],
     "/api/media-locations/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/media-locations/route.js"
     ],
-    "/(main)/crop/media/[mediaId]/page": [
+    "/api/crops/[cropId]/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(main)/crop/media/[mediaId]/page.js"
+      "static/chunks/app/api/crops/[cropId]/route.js"
     ],
-    "/api/media_locations/[id]/route": [
+    "/(main)/task/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/media_locations/[id]/route.js"
+      "static/chunks/app/(main)/task/page.js"
     ],
-    "/(main)/crop/media/[mediaId]/[cropId]/page": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(main)/crop/media/[mediaId]/[cropId]/page.js"
-    ],
-    "/api/plantings/[id]/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/plantings/[id]/route.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }
