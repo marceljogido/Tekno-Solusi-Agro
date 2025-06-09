@@ -4,6 +4,7 @@ import { getUserFromSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { plantings } from "@/db/schema";
+import { crops } from "@/db/schema";
 
 // GET /api/media_locations/[id] - Get specific media location
 export async function GET(request, { params }) {
@@ -35,7 +36,28 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Media location not found" }, { status: 404 });
     }
 
-    return NextResponse.json(mediaLocation[0]);
+    // Ambil semua plantings untuk media/location ini beserta nama crop
+    const plantingsList = await db
+      .select({
+        id: plantings.id,
+        cropId: plantings.cropId,
+        cropName: crops.name,
+        plantingQuantity: plantings.plantingQuantity,
+        plantingDate: plantings.plantingDate,
+        harvestPlan: plantings.harvestPlan,
+        // tambahkan field lain jika perlu
+      })
+      .from(plantings)
+      .leftJoin(crops, eq(plantings.cropId, crops.id))
+      .where(eq(plantings.locationId, id));
+
+    // Gabungkan ke response
+    const result = {
+      ...mediaLocation[0],
+      plantings: plantingsList,
+    };
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching media location:", error);
     return NextResponse.json(

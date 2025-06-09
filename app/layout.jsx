@@ -1,4 +1,4 @@
-import { Geist_Mono, Manrope } from "next/font/google";
+import { Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -6,8 +6,8 @@ const manrope = Manrope({
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -20,7 +20,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${manrope.variable} ${geistMono.variable} antialiased`}>
+        className={`${manrope.variable} ${jetbrainsMono.variable} antialiased`}>
         {children}
       </body>
     </html>
