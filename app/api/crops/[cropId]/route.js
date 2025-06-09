@@ -13,7 +13,7 @@ export async function GET(request, { params }) {
       });
     }
 
-    const { cropId } = params;
+    const { cropId } = await params;
     if (!cropId) {
       return new Response(JSON.stringify({ error: 'Crop ID is required' }), {
         status: 400,

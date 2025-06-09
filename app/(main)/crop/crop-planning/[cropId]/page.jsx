@@ -191,10 +191,6 @@ export default function CropPlanningDetailPage({ params }) {
                   mediaData={mediaDataForMap}
                 />
               )}
-              {/* Fullscreen button */}
-              <button className="absolute bottom-3 right-3 bg-white shadow rounded-full p-2 hover:bg-gray-100 transition z-10" title="Fullscreen">
-                <svg width="20" height="20" fill="none"><rect x="3" y="3" width="14" height="14" rx="3" stroke="#888" strokeWidth="2"/><path d="M7 7h2v2H7V7zm4 4h2v2h-2v-2z" fill="#888"/></svg>
-              </button>
             </div>
           </div>
           {/* Harvest */}
