@@ -240,7 +240,7 @@ function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, map
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Tanaman</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Lahan</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Luas (m²)</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -253,7 +253,7 @@ function TabelMedia({ onAdd, mediaList, onEdit, onDelete, isMapScriptLoaded, map
                     <tr 
                       key={media.id} 
                       className="cursor-pointer hover:bg-gray-100"
-                      onClick={() => router.push(`/crop-production/media/${media.id}`)}
+                      onClick={() => router.push(`/crop/media/${media.id}`)}
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{media.name || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{media.locationType || '-'}</td>
@@ -1081,16 +1081,11 @@ function FormMedia({ onBack, onSuccess, initialData, isMapScriptLoaded, mapScrip
                      </div>
                    )}
                    <div>
-                     <label className="block text-sm font-medium text-gray-700">Luas Area dari Peta (m²)</label>
+                     <label className="block text-sm font-medium text-gray-700">Luas Area Sebenarnya (m²)</label>
                      <Input
                        type="number"
-                       value={form.areaSize || ''}
-                       onChange={(e) => {
-                         if (!hidePlantingFormat && plantingFormat !== 'baris') {
-                           setForm(prev => ({ ...prev, areaSize: e.target.value }));
-                         }
-                       }}
-                       readOnly={!hidePlantingFormat && plantingFormat !== 'baris'}
+                       value={form.areaSize !== undefined && form.areaSize !== null ? String(form.areaSize) : ''}
+                       onChange={(e) => setForm(prev => ({ ...prev, areaSize: e.target.value }))}
                      />
                    </div>
                    {/* Add Luas Total Bedengan for bedengan format */}

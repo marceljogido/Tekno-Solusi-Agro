@@ -3,6 +3,8 @@ import { plantings } from "@/db/schema";
 import { getUserFromSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
+import { crops } from "@/db/schema";
+import { mediaLocations } from "@/db/schema";
 
 // DELETE /api/plantings/[id] - Delete planting
 export async function DELETE(request, { params }) {
@@ -66,24 +68,21 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const id = Number(params.id);
-    console.log("Attempting to fetch planting with ID:", id);
-    if (isNaN(id)) {
-      console.log("Invalid ID format:", params.id);
+    const { id } = await params;
+    const plantingId = Number(id);
+    console.log("Attempting to fetch planting with ID:", plantingId);
+    if (isNaN(plantingId)) {
+      console.log("Invalid ID format:", id);
       return NextResponse.json({ error: "Invalid planting ID" }, { status: 400 });
     }
 
-    const planting = await db.query.plantings.findFirst({
-      where: and(
-        eq(plantings.id, id),
+    const planting = await db.select()
+      .from(plantings)
+      .where(and(
+        eq(plantings.id, plantingId),
         eq(plantings.createdBy, user.id)
-      ),
-      // Include crop and location details for displaying in edit form
-      with: {
-        crop: { columns: { name: true, variety: true } },
-        location: { columns: { name: true, locationType: true } }
-      }
-    });
+      ))
+      .then(rows => rows[0]);
 
     console.log("Found planting for GET:", planting);
 
@@ -92,7 +91,25 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Planting not found" }, { status: 404 });
     }
 
-    return NextResponse.json(planting);
+    // If we have a planting, fetch related data separately
+    const crop = planting.cropId ? await db.select()
+      .from(crops)
+      .where(eq(crops.id, planting.cropId))
+      .then(rows => rows[0]) : null;
+
+    const location = planting.locationId ? await db.select()
+      .from(mediaLocations)
+      .where(eq(mediaLocations.id, planting.locationId))
+      .then(rows => rows[0]) : null;
+
+    // Combine the data
+    const result = {
+      ...planting,
+      crop,
+      location
+    };
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching planting:", error);
     return NextResponse.json(
