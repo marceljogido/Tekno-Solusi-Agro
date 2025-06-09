@@ -1,0 +1,41 @@
+/* Gantt Chart Bar Styling */
+.gantt-bar {
+  height: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+  position: relative;
+  z-index: 2;
+  transition: filter 0.2s, box-shadow 0.2s;
+}
+.gantt-bar:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 16px 0 rgba(0,0,0,0.15);
+  cursor: pointer;
+}
+.gantt-bar-label {
+  position: absolute;
+  top: -18px;
+  left: 0;
+  font-size: 10px;
+  font-weight: bold;
+  background: #fff;
+  padding: 0 4px;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+  pointer-events: none;
+  white-space: nowrap;
+}
+/* Tooltip klasik saat hover */
+.tooltip:hover::after {
+  content: attr(title);
+  position: absolute;
+  top: -28px;
+  left: 0;
+  background: #333;
+  color: white;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 10;
+} 
